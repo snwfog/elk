@@ -1,4 +1,5 @@
 require 'celluloid/current'
+# require 'celluloid/redis'
 require 'benchmark'
 require 'faker'
 require 'redis'
@@ -36,11 +37,12 @@ class Butler < ActorBase
   include Celluloid
 
   def page_view(et_id, url, timestamp)
+    p ["Current actor #{Celluloid.current_actor} mailbox size: #{Celluloid.current_actor.mailbox.size}"]
     t1_pool.with do |t1_conn|
-      t1_conn.multi do
+      t1_conn.pipelined do
         t1_conn.zadd "#{LAST_VISIT}", timestamp.to_f, et_id
         t1_conn.zadd "#{PAGE_VIEW}:#{et_id}", timestamp.to_f, url
-        t1_conn.hsetnx "#{VISITOR}:#{et_id}", :ip, Faker::Internet.ip_v4_address
+        t1_conn.hset "#{VISITOR}:#{et_id}", :ip, Faker::Internet.ip_v4_address
       end
     end
   end
@@ -115,13 +117,13 @@ end
 director = ButlerSupervisor.run!
 
 # t1_pool
-redis_pool = ConnectionPool.new(size: 5) { Redis.new }
+redis_pool = ConnectionPool.new(size: 10) { Redis.new }
 
 # t2_pool
 cassandra_pool = ConnectionPool.new(size: 5) { Cassandra.cluster.connect('tracking') }
 
 pools = [redis_pool, cassandra_pool]
-director.pool(Butler, as: :butlers, size: 4, args: pools)
+director.pool(Butler, as: :butlers, size: 2, args: pools)
 # director.pool(Collector, as: :collectors, size: 2, args: pools)
 
 butlers  = director[:butlers]
@@ -129,9 +131,10 @@ visitors = 100.times.map { SecureRandom.hex(5) }
 
 Benchmark.bm do |x|
   x.report do
+    p butlers.size
     100_000.times do |i|
       print "#{i / 1000}%\r" if i % 1000 == 0
-      butlers.async.page_view(visitors.sample, Faker::Internet.url, Time.now.utc)
+      butlers.async.page_view(visitors.sample, "#{Faker::Internet.url}/#{SecureRandom.hex(10)}", Time.now.utc)
     end
   end
 end
