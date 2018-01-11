@@ -9,12 +9,10 @@ require 'active_support/core_ext/numeric/time'
 require 'cassandra'
 
 client = Redis.new
-if ARGV[0] == 'test'
-  page_views = client.keys('page_view:*').inject(0) do |m, et_id|
-    m += client.hlen(et_id)
-  end
+if ARGV[0] == 'info'
+  page_views = client.keys('page_view:*').inject(0) { |m, et_id| m + client.zcard(et_id) }
   p ['Total page views', page_views]
-  exit 
+  exit
 end
 
 client.flushdb
@@ -37,12 +35,11 @@ end
 class Butler < ActorBase
   include Celluloid
 
-
   def page_view(et_id, url, timestamp)
     t1_pool.with do |t1_conn|
       t1_conn.multi do
-        t1_conn.zadd LAST_VISIT, timestamp.to_f, et_id
-        t1_conn.hset "#{PAGE_VIEW}:#{et_id}", timestamp.to_f, url
+        t1_conn.zadd "#{LAST_VISIT}", timestamp.to_f, et_id
+        t1_conn.zadd "#{PAGE_VIEW}:#{et_id}", timestamp.to_f, url
         t1_conn.hsetnx "#{VISITOR}:#{et_id}", :ip, Faker::Internet.ip_v4_address
       end
     end
@@ -82,7 +79,7 @@ class Collector < ActorBase
                                                                et_id,
                                                                @running_count += 1]]
 
-        session_page_views = t1_conn.hgetall("#{PAGE_VIEW}:#{et_id}")
+        session_page_views = t1_conn.zrange("#{PAGE_VIEW}:#{et_id}", 0, -1, with_scores: true)
         t2_pool.with do |t2_conn|
           t2_conn.execute(
             t2_conn.batch do |batch|
@@ -96,6 +93,7 @@ class Collector < ActorBase
             end
           )
         end
+
         t1_conn.multi do
           t1_conn.del "#{PAGE_VIEW}:#{et_id}"
           t1_conn.del "#{VISITOR}:#{et_id}"
@@ -131,12 +129,13 @@ visitors = 100.times.map { SecureRandom.hex(5) }
 
 Benchmark.bm do |x|
   x.report do
-    100_000.times do
+    100_000.times do |i|
+      print "#{i / 1000}%\r" if i % 1000 == 0
       butlers.async.page_view(visitors.sample, Faker::Internet.url, Time.now.utc)
     end
   end
 end
 
-sleep 200
+sleep 2000
 
 # 1. Make sure pool and thread numbers are aligned
