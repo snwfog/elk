@@ -1,5 +1,4 @@
 require 'celluloid/current'
-require 'celluloid/redis'
 require 'connection_pool'
 require 'faker'
 require 'redis'
@@ -59,7 +58,7 @@ Benchmark.bm do |x|
     grunt.pool(Peon, as: :peons, args: [redis_pool], size: 10)
     50_000.times { |i|
       if i % 1000 == 0
-        p ['Iteration', i / 1000]
+        print "Iteration #{i / 1000}\r"
         # fiber_count = 0
         # ObjectSpace.each_object(Fiber) { |fib| fiber_count += 1 if fib.alive? }
         # thread_count = 0
@@ -80,7 +79,7 @@ Benchmark.bm do |x|
     grunt.pool(Peon, as: :peons, args: [ConnectionPool.new(size: 10) { Redis.new(driver: :celluloid) }], size: 10)
     50_000.times { |i|
       if i % 1000 == 0
-        p ['Iteration', i / 1000]
+        print "Iteration #{i / 1000}\r"
         # fiber_count = 0
         # ObjectSpace.each_object(Fiber) { |fib| fiber_count += 1 if fib.alive? }
         # thread_count = 0
