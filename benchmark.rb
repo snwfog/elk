@@ -54,40 +54,44 @@ Benchmark.bm do |x|
     class Grunt < Celluloid::Supervision::Container
     end
 
-    grunt = Grunt.run!
-    grunt.pool(Peon, as: :peons, args: [redis_pool], size: 10)
-    50_000.times { |i|
-      if i % 1000 == 0
-        print "Iteration #{i / 1000}\r"
-        # fiber_count = 0
-        # ObjectSpace.each_object(Fiber) { |fib| fiber_count += 1 if fib.alive? }
-        # thread_count = 0
-        # ObjectSpace.each_object(Thread) { |thread| thread_count += 1 }
-        # p ['Iteration', i / 1000, 'Fiber counts', fiber_count, 'Thread counts', thread_count]
-      end
-
-      grunt[:peons].async.work_work }
+    5.times {
+      grunt = Grunt.run!
+      grunt.pool(Peon, as: :peons, args: [ConnectionPool.new(size: 10) { Redis.new }], size: 10)
+      # Problem here is that the main thread is dispatching these
+      # work and the main thread is slow.
+      # Solution is to move the work done into each individual thread.
+      20_000.times { |i|
+        if i % 1000 == 0
+          print "Iteration #{i / 1000}\r"
+          # fiber_count = 0
+          # ObjectSpace.each_object(Fiber) { |fib| fiber_count += 1 if fib.alive? }
+          # thread_count = 0
+          # ObjectSpace.each_object(Thread) { |thread| thread_count += 1 }
+          # p ['Iteration', i / 1000, 'Fiber counts', fiber_count, 'Thread counts', thread_count]
+        end
+        grunt[:peons].async.work_work }
+    }
   end
 
-  # x.report('celluloid async + celluloid redis (fibered)') do
-  #   redis_pool.with { |conn| conn.flushdb }
-  #   Peon.include(Celluloid)
-  #   class Grunt < Celluloid::Supervision::Container
-  #   end
-  #
-  #   grunt = Grunt.run!
-  #   grunt.pool(Peon, as: :peons, args: [ConnectionPool.new(size: 10) { Redis.new(driver: :celluloid) }], size: 10)
-  #   50_000.times { |i|
-  #     if i % 1000 == 0
-  #       print "Iteration #{i / 1000}\r"
-  #       # fiber_count = 0
-  #       # ObjectSpace.each_object(Fiber) { |fib| fiber_count += 1 if fib.alive? }
-  #       # thread_count = 0
-  #       # ObjectSpace.each_object(Thread) { |thread| thread_count += 1 }
-  #       # p ['Iteration', i / 1000, 'Fiber counts', fiber_count, 'Thread counts', thread_count]
-  #     end
-  #
-  #     grunt[:peons].async.work_work }
-  # end
+    # x.report('celluloid async + celluloid redis (fibered)') do
+    #   redis_pool.with { |conn| conn.flushdb }
+    #   Peon.include(Celluloid)
+    #   class Grunt < Celluloid::Supervision::Container
+    #   end
+    #
+    #   grunt = Grunt.run!
+    #   grunt.pool(Peon, as: :peons, args: [ConnectionPool.new(size: 10) { Redis.new(driver: :celluloid) }], size: 10)
+    #   50_000.times { |i|
+    #     if i % 1000 == 0
+    #       print "Iteration #{i / 1000}\r"
+    #       # fiber_count = 0
+    #       # ObjectSpace.each_object(Fiber) { |fib| fiber_count += 1 if fib.alive? }
+    #       # thread_count = 0
+    #       # ObjectSpace.each_object(Thread) { |thread| thread_count += 1 }
+    #       # p ['Iteration', i / 1000, 'Fiber counts', fiber_count, 'Thread counts', thread_count]
+    #     end
+    #
+    #     grunt[:peons].async.work_work }
+    # end
 end
 

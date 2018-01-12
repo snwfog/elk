@@ -1,5 +1,4 @@
 require 'celluloid/current'
-require 'celluloid/redis'
 require 'benchmark'
 require 'faker'
 require 'redis'
@@ -33,82 +32,8 @@ class ActorBase
   end
 end
 
-class Butler < ActorBase
-  include Celluloid
-
-  def page_view(et_id, url, timestamp)
-    # p ['Current actor mailbox count', Celluloid.current_actor.mailbox.size]
-    t1_pool.with do |t1_conn|
-      t1_conn.pipelined do
-        t1_conn.zadd "#{LAST_VISIT}", timestamp.to_f, et_id
-        t1_conn.zadd "#{PAGE_VIEW}:#{et_id}", timestamp.to_f, url
-        t1_conn.hsetnx "#{VISITOR}:#{et_id}", :ip, Faker::Internet.ip_v4_address
-      end
-    end
-  end
-end
-
-class Collector < ActorBase
-  include Celluloid
-
-  SESSION_EXPIRY_TIME = '2_seconds'.to_i.seconds
-  TIME_FORMAT         = '%Y-%m-%d %H:%M:%S.%L'.freeze
-
-  finalizer :on_finalize
-
-  def initialize(t1_pool, t2_pool)
-    super
-    every(1, &method(:collects))
-
-    @running_count = 0
-    t2_pool.with do |conn|
-      @insert_page_view_stmt = conn.prepare <<~SQL
-        INSERT INTO page_views (id, session_id, url, referer_url, created_at)
-        VALUES (?, ?, ?, ?, ?)
-      SQL
-    end
-  end
-
-  def collects
-    t1_pool.with do |t1_conn|
-      # Dequeue 1 at a time
-      expired_visit_session_ids = t1_conn.zrangebyscore(LAST_VISIT, 0,
-                                                        SESSION_EXPIRY_TIME.ago.to_i,
-                                                        limit: [rand(2), 1]) # <== LOL
-      return if expired_visit_session_ids.empty?
-      expired_visit_session_ids.each do |et_id|
-        p ['[Thread: %d] Expiring visitor %s (session #%d)' % [Thread.current.object_id,
-                                                               et_id,
-                                                               @running_count += 1]]
-
-        session_page_views = t1_conn.zrange("#{PAGE_VIEW}:#{et_id}", 0, -1, with_scores: true)
-        t2_pool.with do |t2_conn|
-          t2_conn.execute(
-            t2_conn.batch do |batch|
-              session_page_views.each do |timestamp, url|
-                batch.add(@insert_page_view_stmt, arguments: [SecureRandom.hex(5).to_i(16),
-                                                              et_id, url, url,
-                                                              Time
-                                                                .strptime(timestamp, '%s.%L')
-                                                                .utc])
-              end
-            end
-          )
-        end
-
-        t1_conn.multi do
-          t1_conn.del "#{PAGE_VIEW}:#{et_id}"
-          t1_conn.del "#{VISITOR}:#{et_id}"
-          t1_conn.zrem LAST_VISIT, et_id
-        end
-      end
-    end
-  end
-
-  def on_finalize
-    puts ['Collector %s processed %d sessions...Will no exit.' % [self, @running_count]]
-  end
-end
+require_relative './actors/butler'
+require_relative './actors/collector'
 
 class ButlerSupervisor < Celluloid::Supervision::Container
 end
@@ -116,26 +41,29 @@ end
 # watch out for threading on mri ruby
 director = ButlerSupervisor.run!
 
-# t1_pool
-redis_pool = ConnectionPool.new(size: 10) { Redis.new(driver: :celluloid) }
+# t1_pool == redis
+# t2_pool == cassandra
 
-# t2_pool
-cassandra_pool = ConnectionPool.new(size: 5) { Cassandra.cluster.connect('tracking') }
-
-pools = [redis_pool, cassandra_pool]
-director.pool(Butler, as: :butlers, size: 2, args: pools)
-# director.pool(Collector, as: :collectors, size: 2, args: pools)
+t_size = 2
+director.pool(Butler,
+              as:   :butlers,
+              size: t_size,
+              args: [ConnectionPool.new(size: t_size) { Redis.new },
+                     ConnectionPool.new(size: t_size) { Cassandra.cluster.connect('tracking') }])
 
 butlers  = director[:butlers]
-visitors = 100.times.map { SecureRandom.hex(5) }
+visitors = Array.new(1_000) { SecureRandom.hex(10) }
 
 Benchmark.bm do |x|
   x.report do
-    p butlers.size
-    50_000.times do |i|
-      print "#{i / 1000}%\r" if i % 1000 == 0
-      butlers.async.page_view(visitors.sample, "#{Faker::Internet.url}/#{SecureRandom.hex(10)}", Time.now.utc)
-    end
+    Array.new(10) do
+      Thread.new do
+        10_000.times do |i|
+          # print "#{i / 1000}%\r" if i % 1000 == 0
+          butlers.async.page_view(visitors.sample, "#{Faker::Internet.url}/#{SecureRandom.hex(10)}", Time.now.utc)
+        end
+      end
+    end.each(&:join)
   end
 end
 
