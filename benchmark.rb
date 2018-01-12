@@ -13,10 +13,12 @@ class Peon
   end
 
   def work_work
-    @pool.with do |conn|
-      conn.pipelined do
-        5.times do
-          conn.zadd($ids.sample, Time.now.utc.to_f, $urls.sample)
+    100_000.times do
+      @pool.with do |conn|
+        conn.pipelined do
+          5.times do
+            conn.zadd($ids.sample, Time.now.utc.to_f, $urls.sample)
+          end
         end
       end
     end
@@ -56,17 +58,8 @@ Benchmark.bm do |x|
 
     grunt = Grunt.run!
     grunt.pool(Peon, as: :peons, args: [redis_pool], size: 10)
-    50_000.times { |i|
-      if i % 1000 == 0
-        print "Iteration #{i / 1000}\r"
-        # fiber_count = 0
-        # ObjectSpace.each_object(Fiber) { |fib| fiber_count += 1 if fib.alive? }
-        # thread_count = 0
-        # ObjectSpace.each_object(Thread) { |thread| thread_count += 1 }
-        # p ['Iteration', i / 1000, 'Fiber counts', fiber_count, 'Thread counts', thread_count]
-      end
-
-      grunt[:peons].async.work_work }
+    10.times.map { |i|
+      grunt[:peons].future.work_work }.map(&:value)
   end
 
   # x.report('celluloid async + celluloid redis (fibered)') do
@@ -90,4 +83,3 @@ Benchmark.bm do |x|
   #     grunt[:peons].async.work_work }
   # end
 end
-
