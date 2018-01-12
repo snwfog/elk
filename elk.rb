@@ -44,11 +44,11 @@ director = ButlerSupervisor.run!
 # t1_pool == redis
 # t2_pool == cassandra
 
-t_size = 2
+t_size = 16
 director.pool(Butler,
               as:   :butlers,
               size: t_size,
-              args: [ConnectionPool.new(size: t_size) { Redis.new },
+              args: [ConnectionPool.new(size: 20 * t_size) { Redis.new(path: '/tmp/redis.sock') },
                      ConnectionPool.new(size: t_size) { Cassandra.cluster.connect('tracking') }])
 
 butlers  = director[:butlers]
@@ -56,9 +56,10 @@ visitors = Array.new(1_000) { SecureRandom.hex(10) }
 
 Benchmark.bm do |x|
   x.report do
-    Array.new(10) do
+    Array.new(100) do
+      # looks like 100 thread is about a good number
       Thread.new do
-        10_000.times do |i|
+        50_000.times do |i|
           # print "#{i / 1000}%\r" if i % 1000 == 0
           butlers.async.page_view(visitors.sample, "#{Faker::Internet.url}/#{SecureRandom.hex(10)}", Time.now.utc)
         end
