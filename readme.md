@@ -1,0 +1,1 @@
+jruby --server -J-Xms1500m -J-Xmx1500m elk.rb

@@ -3,6 +3,23 @@ require 'connection_pool'
 require 'faker'
 require 'redis'
 
+Benchmark.bm do |x|
+  x.report do
+    Array.new(100) do
+      # looks like 100 thread is about a good balance between
+      # the number of thread and the number of page view created
+      Thread.new do
+        50_000.times do |i|
+          # print "#{i / 1000}%\r" if i % 1000 == 0
+          butlers.async.page_view(visitors.sample, "#{Faker::Internet.url}/#{SecureRandom.hex(10)}", Time.now.utc)
+        end
+      end
+    end.each(&:join)
+  end
+end
+
+sleep 2000
+
 $ids  = Array.new(1000) { SecureRandom.hex(8) }
 $urls = Array.new(1_000) { Faker::Internet.url }
 
