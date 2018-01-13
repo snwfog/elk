@@ -1,3 +1,4 @@
+require 'celluloid/current'
 require 'rack'
 require 'faker'
 require 'sinatra'
