@@ -16,30 +16,31 @@ end
 client.flushdb
 client.close
 
+# ElkApp
 class ElkApp < Sinatra::Base
   def initialize
     super()
 
-    unless @pool
-      _initialize_actor_system
-    end
+    @pool ||= _initialize_actor_system
   end
 
-  get('/collect') { handle_then_respond }
-  post('/collect') { handle_then_respond }
+  get('/collect') { handle_nonblock }
+  post('/collect') { handle_nonblock }
 
   private
 
+  def handle_nonblock
+    @pool.async.page_view(env, request)
+    'OK'
+  end
+
+  # Watch-out blocking future call
   def handle_then_respond
     time = Benchmark.realtime do
-      @pool.future.page_view(*parse_req).value
+      @pool.future.page_view(env, request).value
     end
 
     '%0.4f' % time
-  end
-
-  def parse_req
-    ["#{SecureRandom.hex(8)}.#{Time.now.utc.to_i}", Faker::Internet.url, Time.now.utc]
   end
 
   # 1. Make sure pool and thread numbers are aligned
@@ -55,14 +56,14 @@ class ElkApp < Sinatra::Base
     #                       ConnectionPool.new(size: @core_size) { Cassandra
     #                                                                .cluster
     #                                                                .connect('tracking') }])
-    @pool = Elk::Butler
-              .pool(
-                as:   :butlers,
-                size: @core_size,
-                args: [ConnectionPool.new(size: 2 * @core_size) { Redis.new },
-                       ConnectionPool.new(size: @core_size) { Cassandra
-                                                                .cluster
-                                                                .connect('tracking') }])
+    Elk::Butler
+      .pool(
+        as:   :butlers,
+        size: @core_size,
+        args: [ConnectionPool.new(size: 2 * @core_size) { Redis.new },
+               ConnectionPool.new(size: @core_size) { Cassandra
+                                                        .cluster
+                                                        .connect('tracking') }])
 
     # @director.pool(Elk::Collector,
     #                as:   :collectors,

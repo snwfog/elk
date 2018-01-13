@@ -1,8 +1,8 @@
-(function(window, document) {
-  var Elk = function() {};
+(function (window, document) {
+  var Elk = function () {};
 
   Elk.prototype = {
-    pageView = function() {
+    pageView: function () {
       var trackId = readTrackId();
       if (!trackId) {
         trackId = generateTrackId();
@@ -17,12 +17,12 @@
 
   var staticQueue = window._elk;
   window._elk = new Elk();
-})(window, document)
+})(window, document);
 
 
-_elk = (function(window) {
+_elk = (function (window) {
   var elkQ = [];
-  return function(operation, arguments) {
+  return function (operation, arguments) {
     elkQ.push([operation, arguments || []]);
 //    console.log(elkQ);
   };

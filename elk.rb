@@ -28,8 +28,8 @@ end
 require_relative './actors/butler'
 require_relative './actors/collector'
 
-module Elk
-  class ButlerSupervisor < Celluloid::Supervision::Container
-  end
-end
+# module Elk
+#   class ButlerSupervisor < Celluloid::Supervision::Container
+#   end
+# end
 
