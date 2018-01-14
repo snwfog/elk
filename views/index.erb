@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Visitor</title>
+
+  <script src="https://square.github.io/cubism/d3.v2.js"></script>
+  <script src="https://square.github.io/cubism/cubism.v1.js"></script>
+
+  <link rel="stylesheet" href="https://square.github.io/cubism/style.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css">
+</head>
+<body>
+
+<h5>Current Visitors</h5>
+<div id="visitor"></div>
+
+<script type="text/javascript" charset="utf-8">
+  function random(name) {
+    var value = 0,
+      values = [],
+      i = 0,
+      last;
+    return context.metric(function (start, stop, step, callback) {
+      console.log('Calculating metric', start, stop, step);
+      start = +start, stop = +stop;
+      if (isNaN(last)) last = start;
+      while (last < stop) {
+        last += step;
+        value = Math.max(-10, Math.min(10, value + .8 * Math.random() - .4 + .2 * Math.cos(i += .2)));
+        values.push(value);
+      }
+      callback(null, values = values.slice((start - stop) / step));
+    }, name);
+  }
+
+  var context = cubism.context()
+    .serverDelay(0)
+    .clientDelay(0)
+    .size(960);
+
+  var foo = random("foo"),
+    bar = random("bar");
+
+  d3.select("#visitor").call(function (div) {
+    div.append("div")
+      .attr("class", "axis")
+      .call(context.axis().orient("top"));
+
+    div.selectAll(".horizon")
+      .data([foo,
+        bar,
+        foo.add(bar),
+        foo.subtract(bar)])
+      .enter().append("div")
+      .attr("class", "horizon")
+      .call(context.horizon().extent([-20, 20]));
+
+    div.append("div")
+      .attr("class", "rule")
+      .call(context.rule());
+  });
+</script>
+</body>
+</html>

@@ -23,7 +23,7 @@ module Elk
     end
 
     def on_finalize
-      puts 'Finalizing'
+      puts 'Finalizing %s' % Actor.current
     end
   end
 end

@@ -24,7 +24,7 @@ module Elk
         t1_exec do |t1|
           page_views = t1.keys("#{PAGE_VIEW}:#{expired_id}:*")
           unless page_views.empty?
-            t2_exec.with do |t2|
+            t2_exec { |t2|
               stmt_batch = t2.batch do |batch|
                 page_views.each do |page_view|
                   page_view_hsh = t1.hgetall(page_view)
@@ -36,7 +36,7 @@ module Elk
                 end
               end
               t2.execute(stmt_batch)
-            end
+            }
           end
         end
       end
@@ -64,15 +64,15 @@ module Elk
           VALUES (NOW(), ?, ?, ?, ?)
         SQL
 
-        @insert_visitor_stmt = t2.prepare <<~SQL
-          INSERT INTO visitors (
-            id,
-            session_id,
-            ip_address,
-            user_agent
-          )
-          VALUES (?, ?, ?, ?)
-        SQL
+        # @insert_visitor_stmt = t2.prepare <<~SQL
+        #   INSERT INTO visitors (
+        #     id,
+        #     session_id,
+        #     ip_address,
+        #     user_agent
+        #   )
+        #   VALUES (?, ?, ?, ?)
+        # SQL
       end
     end
 
