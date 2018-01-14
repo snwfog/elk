@@ -1,13 +1,4 @@
-require 'celluloid/current'
-require 'json'
-require 'benchmark'
-require 'faker'
-require 'redis'
-require 'connection_pool'
-require 'securerandom'
-require 'active_support/core_ext/numeric/time'
-require 'cassandra'
-
+# Elk
 module Elk
   class ActorBase
 
@@ -24,6 +15,14 @@ module Elk
     def initialize(t1_pool, t2_pool)
       @t1_pool = t1_pool
       @t2_pool = t2_pool
+    end
+
+    def t1_exec(&blk)
+      @t1_pool.with(&blk)
+    end
+
+    def t2_exec(&blk)
+      @t2_pool.with(&blk)
     end
   end
 end

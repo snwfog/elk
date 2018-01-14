@@ -21,13 +21,13 @@ module Elk
       _with_expired_sessions do |expired_id|
         # p ['[Thread: %d] Expiring visitor %s (session #%d)' % [Thread.current.object_id, expired_id,
         #                                                        @running_count += 1]]
-        @t1_pool.with do |t1_conn|
-          page_views = t1_conn.keys("#{PAGE_VIEW}:#{expired_id}:*")
+        t1_exec do |t1|
+          page_views = t1.keys("#{PAGE_VIEW}:#{expired_id}:*")
           unless page_views.empty?
-            @t2_pool.with do |t2_conn|
-              stmt_batch = t2_conn.batch do |batch|
+            t2_exec.with do |t2|
+              stmt_batch = t2.batch do |batch|
                 page_views.each do |page_view|
-                  page_view_hsh = t1_conn.hgetall(page_view)
+                  page_view_hsh = t1.hgetall(page_view)
                   batch.add(@insert_page_view_stmt,
                             arguments: [expired_id,
                                         Time.strptime(page_view_hsh['timestamp'], '%s.%L').utc,
@@ -35,7 +35,7 @@ module Elk
                                         page_view_hsh['referer']])
                 end
               end
-              t2_conn.execute(stmt_batch)
+              t2.execute(stmt_batch)
             end
           end
         end
@@ -53,8 +53,8 @@ module Elk
     private
 
     def _prepare_batch_stmt
-      @t2_pool.with do |conn|
-        @insert_page_view_stmt = conn.prepare <<~SQL
+      t2_exec do |t2|
+        @insert_page_view_stmt = t2.prepare <<~SQL
           INSERT INTO page_views (
             id, 
             session_id, 
@@ -64,7 +64,7 @@ module Elk
           VALUES (NOW(), ?, ?, ?, ?)
         SQL
 
-        @insert_visitor_stmt = conn.prepare <<~SQL
+        @insert_visitor_stmt = t2.prepare <<~SQL
           INSERT INTO visitors (
             id,
             session_id,
@@ -79,28 +79,28 @@ module Elk
     def _with_expired_sessions(&blk)
       expired_id = nil
 
-      @t1_pool.with do |t1_conn|
-        expired_session_ids = t1_conn.zrangebyscore(LAST_VISIT,
-                                                    0,
-                                                    SESSION_EXPIRY_TIME.ago.to_i,
-                                                    limit: [0, 1])
+      t1_exec do |t1|
+        expired_session_ids = t1.zrangebyscore(LAST_VISIT,
+                                               0,
+                                               SESSION_EXPIRY_TIME.ago.to_i,
+                                               limit: [0, 1])
         return if expired_session_ids.empty?
 
         expired_id = expired_session_ids.first
 
-        lock_acquired = t1_conn.sadd(VISITOR_LOCK, expired_id)
+        lock_acquired = t1.sadd(VISITOR_LOCK, expired_id)
 
         return unless lock_acquired
 
-        _removed_visit = t1_conn.zrem LAST_VISIT, expired_id
+        _removed_visit = t1.zrem LAST_VISIT, expired_id
       end
 
       yield expired_id
 
-      @t1_pool.with do |t1_conn|
-        t1_conn.multi do
-          t1_conn.srem VISITOR_LOCK, expired_id
-          t1_conn.del "#{PAGE_VIEW}:#{expired_id}:*"
+      t1_exec do |t1|
+        t1.multi do
+          t1.srem VISITOR_LOCK, expired_id
+          t1.del "#{PAGE_VIEW}:#{expired_id}:*"
         end
       end
     end
