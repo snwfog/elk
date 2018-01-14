@@ -1,3 +1,10 @@
+require 'active_support/core_ext/numeric'
+require 'cassandra'
+require 'celluloid/current'
+require 'connection_pool'
+require 'faker'
+require 'redis'
+
 # Elk
 module Elk
   class ActorBase
