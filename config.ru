@@ -51,17 +51,17 @@ class ElkApp < Sinatra::Base
     @butlers   = Elk::Butler
                    .pool(as:   :butlers,
                          size: @core_size,
-                         args: _connection_pools)
+                         args: _connection_pools(@core_size))
 
     @collectors = Elk::Collector
                     .pool(as:   :collectors,
                           size: @core_size,
-                          args: _connection_pools)
+                          args: _connection_pools(@core_size * 25))
   end
 
-  def _connection_pools
-    [ConnectionPool.new(size: 2 * @core_size) { Redis.new },
-     ConnectionPool.new(size: @core_size) {
+  def _connection_pools(size)
+    [ConnectionPool.new(size: size * 2) { Redis.new },
+     ConnectionPool.new(size: size) {
        Cassandra.cluster.connect('tracking') }]
   end
 end

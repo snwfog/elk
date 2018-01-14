@@ -13,47 +13,30 @@ module Elk
       _prepare_batch_stmt
       @running_count = 0
 
-      every(0.1, &method(:collects))
+      # This time slice should be decreased further
+      every(0.01, &method(:collects))
     end
 
     def collects
-      @lock_acquired, @expired_id = false, nil
-
-      @t1_pool.with do |t1_conn|
-        expired_session_ids = t1_conn.zrangebyscore(LAST_VISIT,
-                                                    0,
-                                                    SESSION_EXPIRY_TIME.ago.to_i,
-                                                    limit: [0, 1])
-        return if expired_session_ids.empty?
-
-        @expired_id    = expired_session_ids.first
-        @lock_acquired = t1_conn.sadd(VISITOR_LOCK, @expired_id)
-
-        return unless @lock_acquired
-        _removed_visit = t1_conn.zrem LAST_VISIT, @expired_id
-
-        p ['[Thread: %d] Expiring visitor %s (session #%d)' % [Thread.current.object_id,
-                                                               @expired_id,
-                                                               @running_count += 1]]
-        page_views = t1_conn.keys("#{PAGE_VIEW}:#{@expired_id}:*")
-        unless page_views.empty?
-          @t2_pool.with do |t2_conn|
-            stmt_batch = t2_conn.batch do |batch|
-              page_views.each do |page_view|
-                page_view_hsh = t1_conn.hgetall(page_view)
-                batch.add(@insert_page_view_stmt,
-                          arguments: [@expired_id,
-                                      Time.strptime(page_view_hsh['timestamp'], '%s.%L').utc,
-                                      page_view_hsh['url'],
-                                      page_view_hsh['referer']])
+      _with_expired_sessions do |expired_id|
+        # p ['[Thread: %d] Expiring visitor %s (session #%d)' % [Thread.current.object_id, expired_id,
+        #                                                        @running_count += 1]]
+        @t1_pool.with do |t1_conn|
+          page_views = t1_conn.keys("#{PAGE_VIEW}:#{expired_id}:*")
+          unless page_views.empty?
+            @t2_pool.with do |t2_conn|
+              stmt_batch = t2_conn.batch do |batch|
+                page_views.each do |page_view|
+                  page_view_hsh = t1_conn.hgetall(page_view)
+                  batch.add(@insert_page_view_stmt,
+                            arguments: [expired_id,
+                                        Time.strptime(page_view_hsh['timestamp'], '%s.%L').utc,
+                                        page_view_hsh['url'],
+                                        page_view_hsh['referer']])
+                end
               end
+              t2_conn.execute(stmt_batch)
             end
-            t2_conn.execute(stmt_batch)
-          end
-
-          t1_conn.multi do
-            t1_conn.srem VISITOR_LOCK, @expired_id
-            t1_conn.del "#{PAGE_VIEW}:#{@expired_id}:*"
           end
         end
       end
@@ -90,6 +73,35 @@ module Elk
           )
           VALUES (?, ?, ?, ?)
         SQL
+      end
+    end
+
+    def _with_expired_sessions(&blk)
+      expired_id = nil
+
+      @t1_pool.with do |t1_conn|
+        expired_session_ids = t1_conn.zrangebyscore(LAST_VISIT,
+                                                    0,
+                                                    SESSION_EXPIRY_TIME.ago.to_i,
+                                                    limit: [0, 1])
+        return if expired_session_ids.empty?
+
+        expired_id = expired_session_ids.first
+
+        lock_acquired = t1_conn.sadd(VISITOR_LOCK, expired_id)
+
+        return unless lock_acquired
+
+        _removed_visit = t1_conn.zrem LAST_VISIT, expired_id
+      end
+
+      yield expired_id
+
+      @t1_pool.with do |t1_conn|
+        t1_conn.multi do
+          t1_conn.srem VISITOR_LOCK, expired_id
+          t1_conn.del "#{PAGE_VIEW}:#{expired_id}:*"
+        end
       end
     end
   end
