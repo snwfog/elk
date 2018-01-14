@@ -1,4 +1,5 @@
 require 'celluloid/current'
+require 'json'
 require 'benchmark'
 require 'faker'
 require 'redis'
@@ -9,9 +10,11 @@ require 'cassandra'
 
 module Elk
   class ActorBase
-    PAGE_VIEW  = 'page_view'.freeze
-    LAST_VISIT = 'last_visit'.freeze
-    VISITOR    = 'visitor'.freeze
+
+    PAGE_VIEW    = 'page_view'.freeze
+    LAST_VISIT   = 'last_visit'.freeze
+    VISITOR      = 'visitor'.freeze
+    VISITOR_LOCK = 'visitor_lock'.freeze
 
     # t1_pool redis
     # t2_pool cassandra

@@ -7,14 +7,17 @@ module Elk
 
     def page_view(env, request)
       timestamp = Time.now.utc
-      et_id     = "#{SecureRandom.hex(8)}:#{timestamp.to_f}"
-      url       = request.url
+      et_id     = SecureRandom.hex(8)
 
       @t1_pool.with do |t1_conn|
         t1_conn.pipelined do
           t1_conn.zadd LAST_VISIT, timestamp.to_f, et_id
-          t1_conn.zadd "#{PAGE_VIEW}:#{et_id}", timestamp.to_f, url
-          t1_conn.hsetnx "#{VISITOR}:#{et_id}", :ip, request.ip
+          { url:       request.url,
+            referer:   request.referer,
+            timestamp: timestamp.to_f,
+            ip:        request.ip }.each do |k, v|
+            t1_conn.hsetnx "#{PAGE_VIEW}:#{et_id}:#{timestamp.to_f}", k, v
+          end
         end
       end
     end

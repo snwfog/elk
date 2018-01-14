@@ -13,8 +13,8 @@ CREATE TABLE "visitors" (
 );
 
 CREATE TABLE "page_views" (
-  id          TIMEUUID PRIMARY KEY,
-  session_id  TEXT,
-  url         TEXT,
-  referer_url TEXT
+  id         TIMEUUID PRIMARY KEY,
+  session_id TEXT,
+  url        TEXT,
+  referer    TEXT
 );

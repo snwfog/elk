@@ -1,8 +1,20 @@
+/**
+ * Supported variables
+ *
+ * cid = client id (uuid 4)
+ * uid = user id
+ * dl = document location
+ * z = cache buster (randomly generated)
+ *
+ * additional notes:
+ * - all value must be pass through encodeURI once, and only once
+ * ref: https://developers.google.com/analytics/devguides/collection/protocol/v1/reference#encoding
+ */
 (function (window, document) {
   var Elk = function () {};
 
   Elk.prototype = {
-    pageView: function () {
+    pageview: function () {
       var trackId = readTrackId();
       if (!trackId) {
         trackId = generateTrackId();
@@ -15,7 +27,7 @@
     },
   };
 
-  var staticQueue = window._elk;
+  var _windowElk = window._elk;
   window._elk = new Elk();
 })(window, document);
 
