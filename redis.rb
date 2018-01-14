@@ -13,6 +13,7 @@ end
 
 Thread.abort_on_exception = true
 
+# Simple redis-backed queue with 4 core
 Array.new(4) {
   Thread.new(pool) do |pool|
     loop {

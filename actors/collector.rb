@@ -10,38 +10,40 @@ module Elk
 
     def initialize(t1_pool, t2_pool)
       super
-      _prepare_stmt
+      _prepare_batch_stmt
       @running_count = 0
 
       every(0.1, &method(:collects))
     end
 
     def collects
+      @lock_acquired, @expired_id = false, nil
+
       @t1_pool.with do |t1_conn|
-        # Dequeue 1 at a time
-        et_id = t1_conn.zrangebyscore(LAST_VISIT,
-                                      0,
-                                      SESSION_EXPIRY_TIME.ago.to_i,
-                                      limit: [0, 1])
+        expired_session_ids = t1_conn.zrangebyscore(LAST_VISIT,
+                                                    0,
+                                                    SESSION_EXPIRY_TIME.ago.to_i,
+                                                    limit: [0, 1])
+        return if expired_session_ids.empty?
 
-        # try to get lock and process this visitor
-        lock_acquired = t1_conn.hsetnx(VISITOR_LOCK, et_id)
-        return unless lock_acquired
-        t1_conn.zrem LAST_VISIT, et_id
+        @expired_id    = expired_session_ids.first
+        @lock_acquired = t1_conn.sadd(VISITOR_LOCK, @expired_id)
 
-        return unless et_id
+        return unless @lock_acquired
+        _removed_visit = t1_conn.zrem LAST_VISIT, @expired_id
+
         p ['[Thread: %d] Expiring visitor %s (session #%d)' % [Thread.current.object_id,
-                                                               et_id,
+                                                               @expired_id,
                                                                @running_count += 1]]
-        page_views = t1_conn.keys("#{PAGE_VIEW}:#{et_id}:*")
+        page_views = t1_conn.keys("#{PAGE_VIEW}:#{@expired_id}:*")
         unless page_views.empty?
           @t2_pool.with do |t2_conn|
             stmt_batch = t2_conn.batch do |batch|
               page_views.each do |page_view|
                 page_view_hsh = t1_conn.hgetall(page_view)
                 batch.add(@insert_page_view_stmt,
-                          arguments: [Time.strptime(page_view_hsh['timestamp'], '%s.%L').utc,
-                                      et_id,
+                          arguments: [@expired_id,
+                                      Time.strptime(page_view_hsh['timestamp'], '%s.%L').utc,
                                       page_view_hsh['url'],
                                       page_view_hsh['referer']])
               end
@@ -49,32 +51,44 @@ module Elk
             t2_conn.execute(stmt_batch)
           end
 
-          t1_conn.del "#{PAGE_VIEW}:#{et_id}:*"
+          t1_conn.multi do
+            t1_conn.srem VISITOR_LOCK, @expired_id
+            t1_conn.del "#{PAGE_VIEW}:#{@expired_id}:*"
+          end
         end
       end
     end
 
     def on_finalize
-      puts ['Collector %s processed %d sessions...Will no exit.' % [self, @running_count]]
+      if @lock_acquired
+        puts ['Lock is acquired, must be freed before crashing... (%s)' % Actor.current]
+      else
+        puts ['Collector %s processed %d sessions...Will now exit.' % [Actor.current, @running_count]]
+      end
     end
 
     private
 
-    def _prepare_stmt
+    def _prepare_batch_stmt
       @t2_pool.with do |conn|
         @insert_page_view_stmt = conn.prepare <<~SQL
           INSERT INTO page_views (
             id, 
             session_id, 
+            timestamp,
             url, 
             referer)
-          VALUES (?, ?, ?, ?)
+          VALUES (NOW(), ?, ?, ?, ?)
         SQL
 
         @insert_visitor_stmt = conn.prepare <<~SQL
           INSERT INTO visitors (
+            id,
+            session_id,
+            ip_address,
+            user_agent
           )
-          VALUES (?, ?, ?)
+          VALUES (?, ?, ?, ?)
         SQL
       end
     end
