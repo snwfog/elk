@@ -2,7 +2,7 @@
  * Supported variables
  *
  * cid = client id (uuid 4)
- * uid = user id
+ * uid = user id 
  * dl = document location
  * z = cache buster (randomly generated)
  *
