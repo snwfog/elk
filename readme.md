@@ -14,4 +14,12 @@ puma --preload -t 8:16
 
 - Ruby 2.3+ / JRuby
 - Cassandra 3, Redis (either install through docker or locally)
-- run `rackup`
+- run `rackup` to startup the normal server
+- - default uses puma, but webrick is okay
+- curl 'http://localhost:9292/collect' to send visit
+- run `RACK_ENV=production rackup -p 9293 script/websocket.ru -s thin`
+- - starts websocket
+- - navigate browser to 'http://localhost:9292/' to view websocket graph
+- if on window, uses sb -c 10 -n 10000 -u 'http://localhost:9292/collect'
+- else if on unix, uses ab, or wrk
+
