@@ -41,6 +41,7 @@ class VisitorLiveStreamApp
 end
 
 run VisitorLiveStreamApp.new
+
 # http://blog.honeybadger.io/building-a-simple-websockets-server-from-scratch-in-ruby/
 # server = TCPServer.new('localhost', 2345)
 # loop do
