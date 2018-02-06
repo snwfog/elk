@@ -6,61 +6,145 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Visitor</title>
 
-  <script src="https://square.github.io/cubism/d3.v2.js"></script>
-  <script src="https://square.github.io/cubism/cubism.v1.js"></script>
-
-  <link rel="stylesheet" href="https://square.github.io/cubism/style.css">
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+  <script src="https://code.highcharts.com/highcharts.js"></script>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css">
 </head>
 <body>
 
 <h5>Current Visitors</h5>
-<div id="visitor"></div>
+<div id="container" style="height: 400px;"></div>
+<button id="button" class="autocompare">Add Point</button>
 
 <script type="text/javascript" charset="utf-8">
-  function random(name) {
-    var value = 0,
-      values = [],
-      i = 0,
-      last;
-    return context.metric(function (start, stop, step, callback) {
-      console.log('Calculating metric', start, stop, step);
-      start = +start, stop = +stop;
-      if (isNaN(last)) last = start;
-      while (last < stop) {
-        last += step;
-        value = Math.max(-10, Math.min(10, value + .8 * Math.random() - .4 + .2 * Math.cos(i += .2)));
-        values.push(value);
+  Highcharts.theme = {
+    "colors": ["#F92672", "#66D9EF", "#A6E22E", "#A6E22E"],
+    "chart": {
+      "backgroundColor": "#272822",
+      "style": {
+        "fontFamily": "Inconsolata",
+        "color": "#A2A39C"
       }
-      callback(null, values = values.slice((start - stop) / step));
-    }, name);
+    },
+    "title": {
+      "style": {
+        "color": "#A2A39C"
+      },
+      "align": "left"
+    },
+    "subtitle": {
+      "style": {
+        "color": "#A2A39C"
+      },
+      "align": "left"
+    },
+    "legend": {
+      "align": "right",
+      "verticalAlign": "bottom",
+      "itemStyle": {
+        "fontWeight": "normal",
+        "color": "#A2A39C"
+      }
+    },
+    "xAxis": {
+      "gridLineDashStyle": "Dot",
+      "gridLineWidth": 1,
+      "gridLineColor": "#A2A39C",
+      "lineColor": "#A2A39C",
+      "minorGridLineColor": "#A2A39C",
+      "tickColor": "#A2A39C",
+      "tickWidth": 1
+    },
+    "yAxis": {
+      "gridLineDashStyle": "Dot",
+      "gridLineColor": "#A2A39C",
+      "lineColor": "#A2A39C",
+      "minorGridLineColor": "#A2A39C",
+      "tickColor": "#A2A39C",
+      "tickWidth": 1
+    }
+  };
+
+  // Apply the theme
+  Highcharts.setOptions(Highcharts.theme);
+
+  var chart = Highcharts.chart('container', {
+    chart: {
+      type: 'areaspline',
+    },
+
+    title: {
+      text: 'Visitor Tracking Overview',
+    },
+
+    xAxis: {
+      type: 'datetime'
+    },
+
+    series: [
+      {
+        name: 'Unique Visitors Count',
+        animation: false,
+        data: [],
+      },
+      {
+        name: 'Current Clicks',
+        animation: false,
+        data: [],
+      },
+    ],
+
+    plotOptions: {
+      areaspline: {
+        fillOpacity: 0.1,
+        marker: {
+          enabled: false,
+        }
+      }
+    }
+  });
+
+  // the button action
+  // var i = 0;
+  // var generate = randomSin();
+  // setInterval(function () {
+  //   chart.series[0].addPoint([+(new Date()), generate()], true, false);
+  //   i += 1;
+  // }, 1000);
+
+  // $('#button').click(function () {
+  //   console.log(generate());
+  // });
+
+  function randomSin() {
+    var value = 0, i = 0;
+    return function () {
+      value = Math.max(-10,
+        Math.min(10, value +
+          .8 * Math.random() -
+          .4 + .2 * Math.cos(i += .2)));
+      return value;
+    }
   }
 
-  var context = cubism.context()
-    .serverDelay(0)
-    .clientDelay(0)
-    .size(960);
+  // Create WebSocket connection.
+  const socket = new WebSocket('ws://localhost:9293');
+  const serverDelay = 5; // 5 seconds lag
+  // Connection opened
+  socket.addEventListener('open', function (event) {
+    setInterval(function () {
+      socket.send(JSON.stringify({
+        time: Math.round(+(new Date()) / 1000) - serverDelay, // Server accept seconds only
+      }));
+    }, 1000);
+  });
 
-  var foo = random("foo"),
-    bar = random("bar");
-
-  d3.select("#visitor").call(function (div) {
-    div.append("div")
-      .attr("class", "axis")
-      .call(context.axis().orient("top"));
-
-    div.selectAll(".horizon")
-      .data([foo,
-        bar,
-        foo.add(bar),
-        foo.subtract(bar)])
-      .enter().append("div")
-      .attr("class", "horizon")
-      .call(context.horizon().extent([-20, 20]));
-
-    div.append("div")
-      .attr("class", "rule")
-      .call(context.rule());
+  // Listen for messages
+  socket.addEventListener('message', function (event) {
+    console.log('Message from server ', event.data);
+    var visitData = JSON.parse(event.data);
+    var newVisit = [visitData.time * 1000, visitData.count];
+    chart.series[0].addPoint(newVisit, true, false);
   });
 </script>
 </body>

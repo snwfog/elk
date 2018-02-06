@@ -1,4 +1,6 @@
 require 'faye/websocket'
+require 'json'
+require 'redis'
 require 'connection_pool'
 require 'securerandom'
 
@@ -9,13 +11,20 @@ class VisitorLiveStreamApp
     @pool = ConnectionPool.new(size: 100) { Redis.new }
   end
 
-  def self.call(env)
+  def call(env)
     if Faye::WebSocket.websocket?(env)
       ws = Faye::WebSocket.new(env)
 
       ws.on :message do |event|
-        p [:message, event, event.data]
-        ws.send(event.data)
+        p [:message, event.data]
+        request_time = JSON.parse(event.data)
+
+        @pool.with do |conn|
+          visitor_count = conn.scard("visitor:rollup:#{request_time['time']}")
+          ws.send(JSON.dump(time:  request_time['time'],
+                            count: visitor_count))
+
+        end
       end
 
       ws.on :close do |event|
@@ -31,7 +40,7 @@ class VisitorLiveStreamApp
   end
 end
 
-run VisitorLiveStreamApp
+run VisitorLiveStreamApp.new
 # http://blog.honeybadger.io/building-a-simple-websockets-server-from-scratch-in-ruby/
 # server = TCPServer.new('localhost', 2345)
 # loop do
