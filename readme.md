@@ -25,4 +25,4 @@ jruby --server -J-Xms1500m -J-Xmx1500m elk.rb
 bundle exec puma -t 8:8
 
 set JAVA_OPTS='-Xms4g -Xmx4g'
-wrk -c 10000 -t 4 -d 30s http://localhost:9292/collect
+wrk -c10000 -t4 -d30s http://localhost:9292/collect
