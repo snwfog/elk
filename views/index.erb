@@ -56,8 +56,8 @@
   </div>
 </div>
 
-<script id="tracking_command_worker" type="javascript">
-  <!--<script id="tracking_command_worker" type="javascript/worker">-->
+<!--<script id="tracking_command_worker" type="javascript">-->
+<script id="tracking_command_worker" type="javascript/worker">
   // https://www.html5rocks.com/en/tutorials/workers/basics/
   self.onmessage = function (e) {
     var cnt = 1;
@@ -143,13 +143,14 @@
       });
 
       worker.onmessage = function (evt) {
-        console.log('Worker ' + i + ' is processing...' + evt.data);
         var workerId = evt.data.worker_id;
+        console.log('Worker ' + workerId + ' is processing...' + JSON.stringify(evt.data, null, 2));
         var workerProgress = evt.data.processed;
         var workerTotal = evt.data.total;
         var $elProgressBar = workers[ workerId ].workerProgressBar;
         $elProgressBar.find('div[role="progressbar"]').css('width', workerProgress / workerTotal * 100 + '%');
       };
+
       worker.postMessage({ clicks_count: hitCount, worker_id: i });
     }
   });
@@ -218,11 +219,11 @@
         animation: false,
         data: [],
       },
-      {
-        name: 'Current Clicks',
-        animation: false,
-        data: [],
-      },
+      // {
+      //   name: 'Current Clicks',
+      //   animation: false,
+      //   data: [],
+      // },
     ],
 
     plotOptions: {
