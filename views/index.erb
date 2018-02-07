@@ -8,13 +8,57 @@
 
   <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
   <script src="https://code.highcharts.com/highcharts.js"></script>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 </head>
 <body>
 
-<h5>Current Visitors</h5>
+<nav class="navbar">
+  <section class="navbar-brand">Current Visitors</section>
+</nav>
+
 <div id="container" style="height: 400px;"></div>
-<button id="button" class="autocompare">Add Point</button>
+<div class="container" style="margin-top: 3em;">
+  <div class="row">
+    <div class="col-2"></div>
+    <div class="col">
+      <form>
+        <div class="form-group">
+          <h2>Web Worker Count: <span id="webworker_range_display">20</span></h2>
+          <input id="webworker_range" class="range form-control" type="range"
+                 min="1" max="20" value="4">
+          <small id="hardware-warning" class="form-text text-danger" style="display: none;">
+            Core limit exceeded, browser might crash :(
+          </small>
+        </div>
+
+        <div class="form-group">
+          <h2>Clicks Per Worker: <span id="webworker_clicks_display">5</span></h2>
+          <input id="webworker_clicks" class="range form-control" type="range"
+                 min="1" max="10000" value="5">
+        </div>
+      </form>
+
+      <button id="track" class="btn btn-primary">Hit It!</button>
+    </div>
+    <div class="col-2"></div>
+  </div>
+</div>
+
+<script type="text/javascript" charset="utf-8">
+  $('.range').on('input', function (evt) {
+    var $target = $(evt.target);
+    $('#' + $target.attr('id') + '_display').html($target.val());
+    if ($target.attr('id') === 'webworker_range') {
+      var $elHardwareWarning = $('#hardware-warning');
+      if (Number($target.val()) > navigator.hardwareConcurrency) {
+        $elHardwareWarning.show();
+      }
+      else {
+        $elHardwareWarning.hide();
+      }
+    }
+  });
+</script>
 
 <script type="text/javascript" charset="utf-8">
   Highcharts.theme = {
