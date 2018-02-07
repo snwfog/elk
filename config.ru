@@ -38,6 +38,7 @@ class ElkApp < Sinatra::Base
   get('/') { erb :index }
 
   get('/collect') { handle_nonblock }
+  get('/dummy') { 'OK' }
   post('/collect') { handle_nonblock }
 
   private

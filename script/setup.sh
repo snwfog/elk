@@ -17,4 +17,6 @@ sudo apt-get install rbenv
 
 " Gosh for gcc7 on latest ubuntu, need to apply this patch
 " rbenv install -p 2.3.1 < <(curl -sSL https://bugs.ruby-lang.org/attachments/download/6655/ruby_2_3_gcc7.patch)
+sudo apt-get install ruby-dev
 
+cat /proc/cpuinfo | grep processor | wc -l

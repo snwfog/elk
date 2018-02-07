@@ -7,9 +7,6 @@ backend storage (L2 cache possibly). Rough benchmark
 
 Bonus: Websocket client + nice graph for peak usage.
 
-jruby --server -J-Xms1500m -J-Xmx1500m elk.rb
-puma --preload -t 8:16
-
 ### Installation / Requirements
 
 - Ruby 2.3+ / JRuby
@@ -24,4 +21,8 @@ puma --preload -t 8:16
 - else if on unix, uses ab, or wrk
 - Use 'script/setup.sh' for linux box
 
+jruby --server -J-Xms1500m -J-Xmx1500m elk.rb
+bundle exec puma -t 8:8
 
+set JAVA_OPTS='-Xms4g -Xmx4g'
+wrk -c 10000 -t 4 -d 30s http://localhost:9292/collect
