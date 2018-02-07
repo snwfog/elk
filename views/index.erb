@@ -17,13 +17,13 @@
 </nav>
 
 <div id="container" style="height: 400px;"></div>
-<div class="container" style="margin-top: 3em;">
-  <div class="row">
+<div class="container">
+  <div class="row mt-5">
     <div class="col-2"></div>
     <div class="col">
       <form>
         <div class="form-group">
-          <h2>Web Worker Count: <span id="webworker_range_display">20</span></h2>
+          <h2>Web Worker Count: <span id="webworker_range_display">4</span></h2>
           <input id="webworker_range" class="range form-control" type="range"
                  min="1" max="20" value="4">
           <small id="hardware-warning" class="form-text text-danger" style="display: none;">
@@ -38,15 +38,49 @@
         </div>
       </form>
 
-      <button id="track" class="btn btn-primary">Hit It!</button>
+      <button id="track" class="btn btn-primary btn-lg">Hit It!</button>
+      <button id="stop_track" class="btn btn-danger btn-lg" style="display: none">Cancel</button>
+    </div>
+    <div class="col-2"></div>
+  </div>
+  <div class="row mt-2">
+    <div class="col-2"></div>
+    <div class="col" id="progress_bars">
     </div>
     <div class="col-2"></div>
   </div>
 </div>
 
+<script id="tracking_command_worker" type="javascript">
+  <!--<script id="tracking_command_worker" type="javascript/worker">-->
+  // https://www.html5rocks.com/en/tutorials/workers/basics/
+  self.onmessage = function (e) {
+    var cnt = 1;
+    var workerId = e.data.worker_id;
+    var clicksCount = e.data.clicks_count;
+    var sendClicks = function () {
+      if (cnt <= clicksCount) {
+        self.postMessage({ worker_id: workerId, processed: cnt, total: clicksCount });
+        cnt += 1;
+        setTimeout(sendClicks, 200);
+      }
+    };
+
+    setTimeout(sendClicks, 200);
+  };
+</script>
+
 <script type="text/javascript" charset="utf-8">
   $('.range').on('input', function (evt) {
     var $target = $(evt.target);
+    var $elProgressBars = $('#progress_bars');
+    var $elStartBtn = $('#track');
+    var $elStopBtn = $('#stop_track');
+
+    $elStartBtn.attr('disabled', false);
+    $elStopBtn.hide();
+    $elProgressBars.empty();
+
     $('#' + $target.attr('id') + '_display').html($target.val());
     if ($target.attr('id') === 'webworker_range') {
       var $elHardwareWarning = $('#hardware-warning');
@@ -58,11 +92,67 @@
       }
     }
   });
+
+  var workers = [];
+  $('#stop_track').on('click', function (evt) {
+    var $elProgressBars = $('#progress_bars');
+    var $elStartBtn = $('#track');
+    var $elStopBtn = $(evt.target);
+    var $elRanges = $('.range');
+
+    $elStopBtn.hide();
+    $elStartBtn.attr('disabled', false);
+    $elRanges.attr('disabled', false);
+    $elProgressBars.empty();
+    workers.forEach(function (worker) { worker.worker.terminate(); })
+    workers = [];
+  });
+
+  $('#track').on('click', function (evt) {
+    var $elProgressBars = $('#progress_bars');
+    var $elStartBtn = $(evt.target);
+    var $elStopBtn = $('#stop_track');
+    var $elRanges = $('.range');
+
+    $elStopBtn.show();
+    $elStartBtn.attr('disabled', true);
+    $elRanges.attr('disabled', true);
+    $elProgressBars.empty();
+
+    var workerCount = Number($('#webworker_range').val());
+    var hitCount = Number($('#webworker_clicks').val());
+    var workerBlob = new Blob([ document.querySelector('#tracking_command_worker').textContent ]);
+    for (var i = 0; i < workerCount; i++) {
+      var $elWorkerProgressBar = $(
+        '<label class="h5 mt-2">Worker ' + i + '</label>' +
+        '<div class="progress">' +
+        '<div class="progress-bar progress-bar-striped" role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>' +
+        '</div>');
+      $elProgressBars.append($elWorkerProgressBar);
+
+      var worker = new Worker(window.URL.createObjectURL(workerBlob));
+      workers.push({
+        workerId: i,
+        worker: worker,
+        workerProgressBar: $elWorkerProgressBar
+      });
+
+      worker.onmessage = function (evt) {
+        console.log('Worker ' + i + ' is processing...' + evt.data);
+        var workerId = evt.data.worker_id;
+        var workerProgress = evt.data.processed;
+        var workerTotal = evt.data.total;
+        var $elProgressBar = workers[ workerId ].workerProgressBar;
+        $elProgressBar.find('div[role="progressbar"]').css('width', workerProgress / workerTotal * 100 + '%');
+      };
+      worker.postMessage({ clicks_count: hitCount, worker_id: i });
+    }
+  });
 </script>
 
 <script type="text/javascript" charset="utf-8">
   Highcharts.theme = {
-    "colors": ["#F92672", "#66D9EF", "#A6E22E", "#A6E22E"],
+    "colors": [ "#F92672", "#66D9EF", "#A6E22E", "#A6E22E" ],
     "chart": {
       "backgroundColor": "#272822",
       "style": {
@@ -187,8 +277,8 @@
   socket.addEventListener('message', function (event) {
     console.log('Message from server ', event.data);
     var visitData = JSON.parse(event.data);
-    var newVisit = [visitData.time * 1000, visitData.count];
-    chart.series[0].addPoint(newVisit, true, false);
+    var newVisit = [ visitData.time * 1000, visitData.count ];
+    chart.series[ 0 ].addPoint(newVisit, true, false);
   });
 </script>
 </body>
