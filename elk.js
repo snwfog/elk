@@ -11,7 +11,7 @@
  * ref: https://developers.google.com/analytics/devguides/collection/protocol/v1/reference#encoding
  */
 (function (window, document) {
-  var domain = 'http://localhost:9292/collect'
+  var domain = 'http://localhost:9292/collect';
 
   var Strings = {};
   Strings.orEmpty = function (entity) {

@@ -23,3 +23,6 @@ puma --preload -t 8:16
 - if on window, uses sb -c 10 -n 10000 -u 'http://localhost:9292/collect'
 - else if on unix, uses ab, or wrk
 
+#### Bash Scripts
+
+```
