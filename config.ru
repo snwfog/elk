@@ -22,6 +22,7 @@ class ElkApp < Sinatra::Base
   VISITOR_ROLL_UP_KEY = 'visitor:rollup'.freeze
 
   enable :inline_templates
+  enable :static
 
   def initialize
     super
