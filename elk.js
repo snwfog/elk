@@ -99,8 +99,8 @@
         var img = new Image(1, 1);
  
         var imgSrc = domain + '?pps=3&siteid=' + this.siteID +
-            'guid=' + data['guid'] +
-            'ref=' + data['ref'] +
+            '&guid=' + data['guid'] +
+            '&ref=' + data['ref'] +
             '&ref2=' + data['ref2'] +
             '&tzo=' + data['tzo']
             
