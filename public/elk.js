@@ -44,6 +44,7 @@
   Elk.prototype = {
     hooks: new Hooks(),
     siteID: null,
+    eTagTracking: 0,
 
     pageview: function (ref) {
       if (!this.siteID)
@@ -98,11 +99,15 @@
     trackPageView: function (data) {
       var img = new Image(1, 1);
 
-      var imgSrc = domain + '?pps=3&siteid=' + this.siteID +
-        '&guid=' + data[ 'guid' ] +
+      var imgSrc = domain + '?pps=3&siteid=' + this.siteID
+        + '&etag=' + this.eTagTracking;
+        
+      if (!this.eTagTracking) {
+          imgSrc += '&guid=' + data[ 'guid' ] +
         '&ref=' + data[ 'ref' ] +
         '&ref2=' + data[ 'ref2' ] +
-        '&tzo=' + data[ 'tzo' ]
+        '&tzo=' + data[ 'tzo' ]; 
+      }
 
       img.onload = function () {
         hooks.call('postTrack', data);
@@ -155,13 +160,16 @@
 
     this.push = function () {
       try {
-        var args = arguments[ 1 ] || [];
-        switch (arguments[ 0 ]) {
+        var args = arguments[ 0 ];
+        switch (args[ 0 ]) {
           case 'elkSetSiteID' :
-            _elk.siteID = args[ 0 ];
+            _elk.siteID = args[ 1 ];
+            break;
+          case 'elkSetEtagTracking' :
+            _elk.eTagTracking = args [ 1 ];
             break;
           case 'elkTrackPageView':
-            _elk.pageview.apply(_elk, args);
+            _elk.pageview.apply(_elk, args.slice(1));
             break;
         }
       } catch (e) {}
@@ -179,5 +187,5 @@
   window._elkQ.push.apply(window._elkQ, _oldElkQ);
 })(window, document);
 
-_elkQ.push('elkSetSiteID', [ 123 ]);
-_elkQ.push('elkTrackPageView');
+_elkQ.push(['elkSetSiteID', 123 ]);
+_elkQ.push(['elkTrackPageView']);
