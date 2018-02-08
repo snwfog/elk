@@ -2,13 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Visitor</title>
 
   <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
   <script src="https://code.highcharts.com/highcharts.js"></script>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 </head>
 <body>
 
@@ -67,6 +69,9 @@
       if (cnt <= clicksCount) {
         self.postMessage({ worker_id: workerId, processed: cnt, total: clicksCount });
         cnt += 1;
+        var req = new XMLHttpRequest();
+        req.open('GET', 'http://35.199.18.131/collect', true);
+        req.send();
         setTimeout(sendClicks, 200);
       }
     };
@@ -248,7 +253,7 @@
   // }
 
   // Create WebSocket connection.
-  const socket = new WebSocket('ws://localhost:9293');
+  const socket = new WebSocket('ws://35.199.18.131:9282');
   const serverDelay = 5; // 5 seconds lag
 
   // Connection opened
