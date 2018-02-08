@@ -29,7 +29,8 @@ wrk -c10000 -t4 -d30s http://localhost:9292/collect
 
 
 bundle exec thin -C script/thin_elk.yml start
-bundle exec thin -C script/thin_ws.yml start
+bundle exec thin start -R script/websocket.ru -p 9282 --daemon
+# bundle exec thin -C script/thin_ws.yml start
 
 curl --include \
      --no-buffer \
@@ -42,4 +43,3 @@ curl --include \
      http://example.com:80/
 
 ab -n10000 -c16 http://35.199.18.131/collect
-bundle exec thin start -R script/websocket.ru -p 9999
