@@ -1,0 +1,15 @@
+---
+chdir: /var/www/elk
+environment: production
+address: 0.0.0.0
+port: 9292
+timeout: 30
+log: /var/www/elk/log/thin_elk.log
+pid: /var/www/elk/shared/thin.pid
+socket: /var/www/elk/thin.sock
+max_conns: 1024
+max_persistent_conns: 100
+require: []
+wait: 30
+servers: 8
+daemonize: true
