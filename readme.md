@@ -43,3 +43,5 @@ curl --include \
      http://example.com:80/
 
 ab -n10000 -c16 http://35.199.18.131/collect
+
+ps aux | grep thin | cut -f3 -d' ' | xargs -I{} kill -9 {}

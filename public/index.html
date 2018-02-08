@@ -82,8 +82,6 @@
 
     setTimeout(sendClicks, 200);
   };
-
-
 </script>
 
 <script type="text/javascript" charset="utf-8">
@@ -175,6 +173,36 @@
   $(document).ready(function () {
     var serverAddress = window.location.hostname;
     $('#ip_address').val(serverAddress);
+
+    // Create WebSocket connection.
+    var $elIpAddress = $('#ip_address');
+    const socket = new WebSocket('ws://' + $elIpAddress.val() + '/ws');
+    const serverDelay = 5; // 5 seconds lag
+
+    // Connection opened
+    socket.addEventListener('open', function (evt) {
+      setInterval(function () {
+        socket.send(JSON.stringify({
+          time: Math.round(+(new Date()) / 1000) - serverDelay, // Server accept seconds only
+        }));
+      }, 1000);
+
+      // $.getJSON('//ipapi.co/json/', function (data) {
+      //   var $elConsole = $('#console');
+      //   var ipAddress = JSON.stringify(data);
+      //   $elConsole.append($('<li>' + ipAddress[ 'ip' ] + ' (' + ipAddress[ 'timezone' ] + ') has joined the party'));
+      //
+      //   partyMember = ipAddress;
+      // });
+    });
+
+    // Listen for messages
+    socket.addEventListener('message', function (evt) {
+      console.log('Message from server ', evt.data);
+      var serverData = JSON.parse(evt.data);
+      var newVisit = [ serverData.time * 1000, serverData.count ];
+      chart.series[ 0 ].addPoint(newVisit, true, false);
+    });
   });
 </script>
 
@@ -268,36 +296,6 @@
   //     return value;
   //   }
   // }
-
-  // Create WebSocket connection.
-  var $elIpAddress = $('#ip_address');
-  const socket = new WebSocket('ws://' + $elIpAddress.val() + '/ws');
-  const serverDelay = 5; // 5 seconds lag
-
-  // Connection opened
-  socket.addEventListener('open', function (evt) {
-    setInterval(function () {
-      socket.send(JSON.stringify({
-        time: Math.round(+(new Date()) / 1000) - serverDelay, // Server accept seconds only
-      }));
-    }, 1000);
-
-    // $.getJSON('//ipapi.co/json/', function (data) {
-    //   var $elConsole = $('#console');
-    //   var ipAddress = JSON.stringify(data);
-    //   $elConsole.append($('<li>' + ipAddress[ 'ip' ] + ' (' + ipAddress[ 'timezone' ] + ') has joined the party'));
-    //
-    //   partyMember = ipAddress;
-    // });
-  });
-
-  // Listen for messages
-  socket.addEventListener('message', function (evt) {
-    console.log('Message from server ', evt.data);
-    var serverData = JSON.parse(evt.data);
-    var newVisit = [ serverData.time * 1000, serverData.count ];
-    chart.series[ 0 ].addPoint(newVisit, true, false);
-  });
 </script>
 </body>
 </html>
