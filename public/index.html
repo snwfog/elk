@@ -79,7 +79,7 @@
         self.postMessage({ worker_id: workerId, processed: cnt, total: clicksCount });
         cnt += 1;
         var req = new XMLHttpRequest();
-        req.open('GET', 'http://' + ipAddress + '/collect', true);
+        req.open('GET', 'http://' + ipAddress. + '/collect', true);
         req.send();
         setTimeout(sendClicks, 200);
       }
@@ -217,8 +217,10 @@
       var serverMsg = JSON.parse(evt.data);
       switch (serverMsg.type) {
         case CHANNEL_UPDATE:
-          var newVisit = [ serverMsg.time * 1000, serverMsg.count ];
-          chart.series[ 0 ].addPoint(newVisit, true, false);
+          var newVisitor = [ serverData.time * 1000, serverData.visitor_count ];
+          var newPageView = [ serverData.time * 1000, serverData.page_view_count ];
+          chart.series[ 0 ].addPoint(newVisitor, true, false);
+          chart.series[ 1 ].addPoint(newPageView, true, false);
           break;
         case CHANNEL_JOIN:
         case CHANNEL_CLOSE:
@@ -293,11 +295,11 @@
         animation: false,
         data: [],
       },
-      // {
-      //   name: 'Current Clicks',
-      //   animation: false,
-      //   data: [],
-      // },
+       {
+         name: 'Current Clicks',
+         animation: false,
+         data: [],
+       },
     ],
 
     plotOptions: {

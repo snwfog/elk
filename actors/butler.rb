@@ -5,9 +5,9 @@ module Elk
 
     finalizer :on_finalize
 
-    def page_view(env, request)
+    def page_view(env, request, params)
       timestamp = Time.now.utc
-      et_id     = SecureRandom.hex(8)
+      et_id = params[:guid]
 
       t1_exec do |t1|
         t1.pipelined do
@@ -16,7 +16,7 @@ module Elk
             referer:   request.referer,
             timestamp: timestamp.to_f,
             ip:        request.ip }.each do |k, v|
-            t1.hsetnx "#{PAGE_VIEW}:#{et_id}:#{timestamp.to_f}", k, v
+            t1.hsetnx "#{PAGE_VIEW}:#{et_id}:#{timestamp.to_i}", k, v
           end
         end
       end

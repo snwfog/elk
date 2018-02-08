@@ -45,14 +45,14 @@ class ElkApp < Sinatra::Base
   private
   
   def handle_nonblock
-    @butlers.async.page_view(env, request)
+    @butlers.async.page_view(env, request, params)
     'OK'
   end
   
   # Watch-out blocking future call
   def handle_then_respond
     time = Benchmark.realtime do
-      @butlers.future.page_view(env, request).value
+      @butlers.future.page_view(env, request, params).value
     end
     
     '%0.4f' % time
@@ -84,8 +84,15 @@ class ElkApp < Sinatra::Base
   end
   
   def _rollup_visits
+    et_id = params[:guid]
+    
     @redis.with do |conn|
-      conn.sadd("#{VISITOR_ROLL_UP_KEY}:#{Time.now.utc.to_i}", SecureRandom.hex(10))
+        existing = conn.keys("#{VISITOR_ROLL_UP_KEY}:#{et_id}:*")
+        
+        if existing.empty? then
+            puts "add"
+            conn.sadd("#{VISITOR_ROLL_UP_KEY}:#{et_id}:#{Time.now.utc.to_i}", SecureRandom.hex(10))
+        end
     end
   end
 end

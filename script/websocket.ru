@@ -34,10 +34,11 @@ class VisitorLiveStreamApp
           hitit_broadcast("#{client.name} is hitting it with #{core} x #{hits} clicks!", from: target)
         when CHANNEL_UPDATE
           @pool.with do |conn|
-            visitor_count = conn.scard("visitor:rollup:#{request['time']}")
-            ws.send(JSON.dump(type:  CHANNEL_UPDATE,
-                              time:  request['time'],
-                              count: visitor_count))
+            visitors = conn.keys("visitor:rollup:*:#{request_time['time']}")
+            page_views = conn.keys("page_view:*:#{request_time['time']}")
+            ws.send(JSON.dump(time:  request_time['time'],
+                            visitor_count: visitors.count,
+                            page_view_count: page_views.count))
           end
         end
       end
