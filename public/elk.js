@@ -11,7 +11,7 @@
  * ref: https://developers.google.com/analytics/devguides/collection/protocol/v1/reference#encoding
  */
 (function (window, document) {
-  var domain = 'http://' + window.location.hostname + ':9292/collect';
+  var domain = 'http://' + window.location.hostname + '/collect';
 
   var Strings = {};
   Strings.orEmpty = function (entity) {
@@ -22,11 +22,11 @@
 
   Hooks.prototype = {
     _hooks: [],
-
+    
     register: function (name, f) {
-      if (typeof(this._hooks[ name ]) == 'undefined')
+      if (typeof(this._hooks[ name ]) == 'undefined') {
         this._hooks[ name ] = [];
-
+      }
       this._hooks[ name ].push(f);
     },
 
@@ -47,7 +47,7 @@
 
     pageview: function (ref) {
       var trackId = this.readTrackId();
-
+        
       if (!trackId) {
         trackId = this.generateTrackId();
         this.setTrackId(trackId);
@@ -61,11 +61,11 @@
 
     // Allow different way of storing cookies
     readTrackId: function () {
-      var data = { trackId: null };
+      var data = { trackId: "adasdas" };
 
       this.hooks.call('readTrackId', data);
-
-      return data.trackId || readCookie('GUID');
+      
+      return data.trackId ? data.trackId : readCookie('GUID');
     },
 
     // Allow different way of setting cookies
@@ -95,16 +95,8 @@
     trackPageView: function (data) {
       var img = new Image(1, 1);
 
-      var imgSrc = domain + '?pps=3&siteid=' + this.siteID
-        + '&etag=' + this.eTagTracking;
+      var imgSrc = domain + '?guid=' + data[ 'guid' ];
         
-      if (!this.eTagTracking) {
-          imgSrc += '&guid=' + data[ 'guid' ] +
-        '&ref=' + data[ 'ref' ] +
-        '&ref2=' + data[ 'ref2' ] +
-        '&tzo=' + data[ 'tzo' ]; 
-      }
-
       img.onload = function () {
         hooks.call('postTrack', data);
       };
@@ -153,7 +145,7 @@
 
   var elkQueue = function () {
     var _elk = new Elk();
-
+  
     this.push = function () {
       try {
         var args = arguments[ 0 ];
@@ -161,8 +153,8 @@
           case 'elkTrackPageView':
             _elk.pageview.apply(_elk, args.slice(1));
             break;
-          case 'elqRegister':
-            _elk.hooks.register.apply(_elk, args.slice(1));
+          case 'elkRegister':
+            _elk.hooks.register.apply(_elk.hooks, args.slice(1));
             break;
         }
       } catch (e) {}
@@ -170,7 +162,6 @@
   };
 
   var _oldElkQ = window._elkQ;
-  var _windowElkQ = window._elkQ;
   window._elkQ = new elkQueue();
 
   window._elkQ.push.apply(window._elkQ, _oldElkQ);

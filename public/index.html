@@ -13,6 +13,17 @@
     
     <script type="text/javascript">
         var _elkQ = _elkQ || [];
+       
+        _elkQ.push(['elkTrackPageView']);
+       
+        _elkQ.push(['elkRegister', 'preTrack', function(data) {
+            $('#currentGUID').text(data.guid);
+        }]);        
+        
+        _elkQ.push(['elkRegister', 'readTrackId', function(data) {
+            var guid = $('#useGUID').val();
+            data.trackId = guid;
+        }]);
     </script>
     <link rel="stylesheet"
           href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
@@ -59,12 +70,19 @@
                 </div>
             </form>
 
-            <button id="track" class="btn btn-primary btn-lg">Hit It!</button>
-            <button id="stop_track" class="btn btn-danger btn-lg"
+            <button id="track" class="btn btn-primary btn-md">Hit It!</button>
+            <button id="stop_track" class="btn btn-danger btn-md"
                     style="display: none">Cancel
             </button>
-            <div>
-            <button id="trackCurrentPage" class="btn btn-primary btn-lg" style='margin-top: 15px'>Track Current Page</button>
+            <div style='text-align: center:'>
+                <button id="trackCurrentPage" class="btn btn-primary btn-md" style='margin-top: 10px'>Track Current Page</button>
+                 Current GUID: <span id='currentGUID' style='text-align: center:'></span>
+            </div>
+            <div style='margin-top: 10px'>
+               
+
+                Use GUID:
+                <input id="useGUID" type='text'></input>
             </div>
         </div>
     </div>
@@ -189,7 +207,7 @@
   $("#trackCurrentPage").on("click", function() {
     _elkQ.push(["elkTrackPageView"]);
   });
-
+  
   $(document).ready(function () {
     var serverAddress = window.location.hostname;
     $('#ip_address').val(serverAddress);
