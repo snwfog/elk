@@ -31,3 +31,6 @@ ab -n5000 -c8 http://localhost:9292/collect &
 ab -n5000 -c8 http://localhost:9293/collect &
 ab -n5000 -c8 http://localhost:9294/collect &
 ab -n5000 -c8 http://localhost:9295/collect &
+
+bundle exec thin -C script/thin_elk.yml start
+bundle exec thin -C script/thin_ws.yml start

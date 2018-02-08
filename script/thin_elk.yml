@@ -6,7 +6,7 @@ port: 9292
 timeout: 30
 log: /var/www/elk/log/thin_elk.log
 pid: /var/www/elk/shared/thin.pid
-socket: /var/www/elk/thin.sock
+socket: /var/www/elk/shared/thin.sock
 max_conns: 1024
 max_persistent_conns: 100
 require: []
