@@ -20,48 +20,48 @@ client.close
 # ElkApp
 class ElkApp < Sinatra::Base
   VISITOR_ROLL_UP_KEY = 'visitor:rollup'.freeze
-
+  
   enable :inline_templates
   enable :static
-
+  
   def initialize
     super
-
+    
     @core_size = 4
-
+    
     _initialize_pool
     _initialize_actor_system
   end
-
+  
   before('/collect') { _rollup_visits }
-
+  
   # get('/') { erb :index }
-
+  
   get('/dummy') { 'OK' }
   get('/collect') { handle_nonblock }
-
+  
   post('/collect') { handle_nonblock }
-
+  
   private
-
+  
   def handle_nonblock
     @butlers.async.page_view(env, request)
     'OK'
   end
-
+  
   # Watch-out blocking future call
   def handle_then_respond
     time = Benchmark.realtime do
       @butlers.future.page_view(env, request).value
     end
-
+    
     '%0.4f' % time
   end
-
+  
   def _initialize_pool
     @redis, @cassandra = _connection_pools(@core_size)
   end
-
+  
   # 1. Make sure butlers and thread numbers are aligned
   # 2. Watch out for threading on mri ruby
   def _initialize_actor_system
@@ -70,19 +70,19 @@ class ElkApp < Sinatra::Base
     @butlers = Elk::Butler.pool(as:   :butlers,
                                 size: @core_size,
                                 args: _connection_pools(@core_size))
-
-    # @collectors = Elk::Collector.pool(as:   :collectors,
-    #                                   size: @core_size,
-    #                                   args: _connection_pools(@core_size * 25))
+    
+    @collectors = Elk::Collector.pool(as:   :collectors,
+                                      size: @core_size,
+                                      args: _connection_pools(@core_size * 25))
   end
-
+  
   def _connection_pools(size)
     [ConnectionPool.new(size: size * 2) { Redis.new },
      ConnectionPool.new(size: size) do
        Cassandra.cluster.connect('tracking')
      end]
   end
-
+  
   def _rollup_visits
     @redis.with do |conn|
       conn.sadd("#{VISITOR_ROLL_UP_KEY}:#{Time.now.utc.to_i}", SecureRandom.hex(10))
