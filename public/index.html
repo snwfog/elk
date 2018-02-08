@@ -9,6 +9,11 @@
 
     <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
     <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="elk.js"></script>
+    
+    <script type="text/javascript">
+        var _elkQ = _elkQ || [];
+    </script>
     <link rel="stylesheet"
           href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
           integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
@@ -58,6 +63,9 @@
             <button id="stop_track" class="btn btn-danger btn-lg"
                     style="display: none">Cancel
             </button>
+            <div>
+            <button id="trackCurrentPage" class="btn btn-primary btn-lg" style='margin-top: 15px'>Track Current Page</button>
+            </div>
         </div>
     </div>
     <div class="row mt-2">
@@ -176,6 +184,10 @@
         ip_address: serverIpAddress
       });
     }
+  });
+  
+  $("#trackCurrentPage").on("click", function() {
+    _elkQ.push(["elkTrackPageView"]);
   });
 
   $(document).ready(function () {
