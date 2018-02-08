@@ -78,8 +78,9 @@ class ElkApp < Sinatra::Base
 
   def _connection_pools(size)
     [ConnectionPool.new(size: size * 2) { Redis.new },
-     ConnectionPool.new(size: size) {
-       Cassandra.cluster.connect('tracking') }]
+     ConnectionPool.new(size: size) do
+       Cassandra.cluster.connect('tracking')
+     end]
   end
 
   def _rollup_visits
@@ -89,4 +90,12 @@ class ElkApp < Sinatra::Base
   end
 end
 
+unless ENV['RACK_ENV'] == 'production'
+  use Rack::Static, urls: { '/' => 'index.html' }, root: 'public'
+end
+
 run ElkApp
+# run Rack::URLMap.new(
+#   '/' => Rack::Directory.new('public'), # Serve our static content
+#   '/collect' => ElkApp.new
+# )

@@ -16,6 +16,9 @@
 
 <nav class="navbar">
   <section class="navbar-brand">Current Visitors</section>
+  <form class="form-inline">
+    <input id="ip_address" class="form-control mr-sm-2" type="search">
+  </form>
 </nav>
 
 <div id="container" style="height: 400px;"></div>
@@ -65,12 +68,13 @@
     var cnt = 1;
     var workerId = e.data.worker_id;
     var clicksCount = e.data.clicks_count;
+    var ipAddress = e.data.ip_address;
     var sendClicks = function () {
       if (cnt <= clicksCount) {
         self.postMessage({ worker_id: workerId, processed: cnt, total: clicksCount });
         cnt += 1;
         var req = new XMLHttpRequest();
-        req.open('GET', 'http://35.199.18.131/collect', true);
+        req.open('GET', 'http://' + ipAddress + '/collect' + , true);
         req.send();
         setTimeout(sendClicks, 200);
       }
@@ -78,6 +82,8 @@
 
     setTimeout(sendClicks, 200);
   };
+
+
 </script>
 
 <script type="text/javascript" charset="utf-8">
@@ -156,8 +162,19 @@
         $elProgressBar.find('div[role="progressbar"]').css('width', workerProgress / workerTotal * 100 + '%');
       };
 
-      worker.postMessage({ clicks_count: hitCount, worker_id: i });
+      var $elIpAddress = $('#ip_address');
+      var serverIpAddress = $elIpAddress.val();
+      worker.postMessage({
+        clicks_count: hitCount,
+        worker_id: i,
+        ip_address: serverIpAddress
+      });
     }
+  });
+
+  $(document).ready(function () {
+    var serverAddress = window.location.hostname;
+    $('#ip_address').val(serverAddress);
   });
 </script>
 
@@ -253,7 +270,8 @@
   // }
 
   // Create WebSocket connection.
-  const socket = new WebSocket('ws://35.199.18.131/ws');
+  var $elIpAddress = $('#ip_address');
+  const socket = new WebSocket('ws://' + $elIpAddress.val() + '/ws');
   const serverDelay = 5; // 5 seconds lag
 
   // Connection opened
