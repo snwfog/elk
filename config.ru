@@ -35,10 +35,11 @@ class ElkApp < Sinatra::Base
 
   before('/collect') { _rollup_visits }
 
-  get('/') { erb :index }
+  # get('/') { erb :index }
 
-  get('/collect') { handle_nonblock }
   get('/dummy') { 'OK' }
+  get('/collect') { handle_nonblock }
+
   post('/collect') { handle_nonblock }
 
   private
