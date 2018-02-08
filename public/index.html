@@ -79,7 +79,7 @@
         self.postMessage({ worker_id: workerId, processed: cnt, total: clicksCount });
         cnt += 1;
         var req = new XMLHttpRequest();
-        req.open('GET', 'http://' + ipAddress. + '/collect', true);
+        req.open('GET', 'http://' + ipAddress + ':/collect?guid=' + Math.random(), true);
         req.send();
         setTimeout(sendClicks, 200);
       }
@@ -185,7 +185,7 @@
     // Create WebSocket connection.
     var $elIpAddress = $('#ip_address');
 
-    const socket = new WebSocket('ws://' + $elIpAddress.val() + ':9282/ws');
+    const socket = new WebSocket('ws://' + $elIpAddress.val() + ':9283/ws');
     const serverDelay = 5; // 5 seconds lag
 
     const CHANNEL_UPDATE = 0;
@@ -213,12 +213,12 @@
 
     // Listen for messages
     socket.addEventListener('message', function (evt) {
-      // console.log('Message from server ', evt.data);
+      //console.log('Message from server ', evt.data);
       var serverMsg = JSON.parse(evt.data);
       switch (serverMsg.type) {
         case CHANNEL_UPDATE:
-          var newVisitor = [ serverData.time * 1000, serverData.visitor_count ];
-          var newPageView = [ serverData.time * 1000, serverData.page_view_count ];
+          var newVisitor = [ serverMsg.time * 1000, serverMsg.visitor_count ];
+          var newPageView = [ serverMsg.time * 1000, serverMsg.page_view_count ];
           chart.series[ 0 ].addPoint(newVisitor, true, false);
           chart.series[ 1 ].addPoint(newPageView, true, false);
           break;

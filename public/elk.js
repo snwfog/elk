@@ -43,13 +43,9 @@
 
   Elk.prototype = {
     hooks: new Hooks(),
-    siteID: null,
     eTagTracking: 0,
 
     pageview: function (ref) {
-      if (!this.siteID)
-        return;
-
       var trackId = this.readTrackId();
 
       if (!trackId) {
@@ -162,22 +158,15 @@
       try {
         var args = arguments[ 0 ];
         switch (args[ 0 ]) {
-          case 'elkSetSiteID' :
-            _elk.siteID = args[ 1 ];
-            break;
-          case 'elkSetEtagTracking' :
-            _elk.eTagTracking = args [ 1 ];
-            break;
           case 'elkTrackPageView':
             _elk.pageview.apply(_elk, args.slice(1));
+            break;
+          case 'elqRegister':
+            _elk.hooks.register.apply(_elk, args.slice(1));
             break;
         }
       } catch (e) {}
     };
-
-    this.register = function (name, f) {
-      _elk.hooks.register(name, f)
-    }
   };
 
   var _oldElkQ = window._elkQ;
@@ -186,6 +175,3 @@
 
   window._elkQ.push.apply(window._elkQ, _oldElkQ);
 })(window, document);
-
-_elkQ.push(['elkSetSiteID', 123 ]);
-_elkQ.push(['elkTrackPageView']);
