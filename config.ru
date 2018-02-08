@@ -71,9 +71,9 @@ class ElkApp < Sinatra::Base
                                 size: @core_size,
                                 args: _connection_pools(@core_size))
 
-    @collectors = Elk::Collector.pool(as:   :collectors,
-                                      size: @core_size,
-                                      args: _connection_pools(@core_size * 25))
+    # @collectors = Elk::Collector.pool(as:   :collectors,
+    #                                   size: @core_size,
+    #                                   args: _connection_pools(@core_size * 25))
   end
 
   def _connection_pools(size)
