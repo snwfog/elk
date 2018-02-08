@@ -1,64 +1,69 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Visitor</title>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Visitor</title>
 
-  <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-  <script src="https://code.highcharts.com/highcharts.js"></script>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <link rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+          crossorigin="anonymous">
 </head>
 <body>
 
 <nav class="navbar">
-  <section class="navbar-brand">Current Visitors</section>
-  <form class="form-inline">
-    <input id="ip_address" class="form-control mr-sm-2" type="search">
-  </form>
+    <section class="navbar-brand">Current Visitors</section>
+    <form class="form-inline">
+        <input id="ip_address" class="form-control mr-sm-2" type="search">
+    </form>
 </nav>
 
 <div id="container" style="height: 400px;"></div>
 <div class="container">
-  <div class="row mt-5">
-    <div class="col-4">
-      <h2>Console</h2>
-      <ul id="console">
-        <li>Bla bla bla</li>
-      </ul>
-    </div>
-    <div class="col-8">
-      <h2>Configuration</h2>
-      <form>
-        <div class="form-group">
-          <h4>Web Worker Count: <span id="webworker_range_display">4</span></h4>
-          <input id="webworker_range" class="range form-control" type="range"
-                 min="1" max="20" value="4">
-          <small id="hardware-warning" class="form-text text-danger" style="display: none;">
-            Core limit exceeded, browser might crash :(
-          </small>
+    <div class="row mt-5">
+        <div class="col-6">
+            <h2>Console</h2>
+            <div id="console"></div>
         </div>
+        <div class="col-6">
+            <h2>Configuration</h2>
+            <form>
+                <div class="form-group">
+                    <h4>Web Worker Count: <span
+                            id="webworker_range_display">4</span></h4>
+                    <input id="webworker_range" class="range form-control"
+                           type="range"
+                           min="1" max="20" value="4">
+                    <small id="hardware-warning" class="form-text text-danger"
+                           style="display: none;">
+                        Core limit exceeded, browser might crash :(
+                    </small>
+                </div>
 
-        <div class="form-group">
-          <h4>Clicks Per Worker: <span id="webworker_clicks_display">5</span></h4>
-          <input id="webworker_clicks" class="range form-control" type="range"
-                 min="1" max="10000" value="5">
+                <div class="form-group">
+                    <h4>Clicks Per Worker: <span
+                            id="webworker_clicks_display">5</span></h4>
+                    <input id="webworker_clicks" class="range form-control"
+                           type="range"
+                           min="1" max="10000" value="5">
+                </div>
+            </form>
+
+            <button id="track" class="btn btn-primary btn-lg">Hit It!</button>
+            <button id="stop_track" class="btn btn-danger btn-lg"
+                    style="display: none">Cancel
+            </button>
         </div>
-      </form>
-
-      <button id="track" class="btn btn-primary btn-lg">Hit It!</button>
-      <button id="stop_track" class="btn btn-danger btn-lg" style="display: none">Cancel</button>
     </div>
-  </div>
-  <div class="row mt-2">
-    <div class="col-4"></div>
-    <div class="col" id="progress_bars">
+    <div class="row mt-2">
+        <div class="col-6"></div>
+        <div class="col-6" id="progress_bars"></div>
     </div>
-    <div class="col-8"></div>
-  </div>
 </div>
 
 <!--<script id="tracking_command_worker" type="javascript">-->
@@ -82,6 +87,7 @@
 
     setTimeout(sendClicks, 200);
   };
+
 </script>
 
 <script type="text/javascript" charset="utf-8">
@@ -118,7 +124,9 @@
     $elStartBtn.attr('disabled', false);
     $elRanges.attr('disabled', false);
     $elProgressBars.empty();
-    workers.forEach(function (worker) { worker.worker.terminate(); })
+    workers.forEach(function (worker) {
+      worker.worker.terminate();
+    })
     workers = [];
   });
 
@@ -153,7 +161,7 @@
 
       worker.onmessage = function (evt) {
         var workerId = evt.data.worker_id;
-        console.log('Worker ' + workerId + ' is processing...' + JSON.stringify(evt.data, null, 2));
+        // console.log('Worker ' + workerId + ' is processing...' + JSON.stringify(evt.data, null, 2));
         var workerProgress = evt.data.processed;
         var workerTotal = evt.data.total;
         var $elProgressBar = workers[ workerId ].workerProgressBar;
@@ -176,13 +184,20 @@
 
     // Create WebSocket connection.
     var $elIpAddress = $('#ip_address');
-    const socket = new WebSocket('ws://' + $elIpAddress.val() + '/ws');
+
+    const socket = new WebSocket('ws://' + $elIpAddress.val() + ':9282/ws');
     const serverDelay = 5; // 5 seconds lag
+
+    const CHANNEL_UPDATE = 0;
+    const CHANNEL_JOIN = 1;
+    const CHANNEL_HITIT = 2;
+    const CHANNEL_CLOSE = 3;
 
     // Connection opened
     socket.addEventListener('open', function (evt) {
       setInterval(function () {
         socket.send(JSON.stringify({
+          type: CHANNEL_UPDATE,
           time: Math.round(+(new Date()) / 1000) - serverDelay, // Server accept seconds only
         }));
       }, 1000);
@@ -198,10 +213,19 @@
 
     // Listen for messages
     socket.addEventListener('message', function (evt) {
-      console.log('Message from server ', evt.data);
-      var serverData = JSON.parse(evt.data);
-      var newVisit = [ serverData.time * 1000, serverData.count ];
-      chart.series[ 0 ].addPoint(newVisit, true, false);
+      // console.log('Message from server ', evt.data);
+      var serverMsg = JSON.parse(evt.data);
+      switch (serverMsg.type) {
+        case CHANNEL_UPDATE:
+          var newVisit = [ serverMsg.time * 1000, serverMsg.count ];
+          chart.series[ 0 ].addPoint(newVisit, true, false);
+          break;
+        case CHANNEL_JOIN:
+        case CHANNEL_CLOSE:
+        case CHANNEL_HITIT:
+          $('#console').append($('<p class="h5">' + serverMsg.message + '</p>'));
+          break;
+      }
     });
   });
 </script>

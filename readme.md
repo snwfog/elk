@@ -2,7 +2,7 @@
 
 A POC using actor model to handle visitor tracking
 asynchronously. Uses Redis as an L1 cache, and Cassandra
-backend storage (L2 cache possibly). Rough benchmark 
+backend storage (L2 cache possibly). Rough benchmark
 2200 req/s on a 4 core 2014 mac mini (generate + ingest).
 
 Bonus: Websocket client + nice graph for peak usage.
@@ -45,3 +45,8 @@ curl --include \
 ab -n10000 -c16 http://35.199.18.131/collect
 
 ps aux | grep thin | cut -f3 -d' ' | xargs -I{} kill -9 {}
+
+http://s1564.t.eloqua.com/visitor/v200/svrGP.aspx?pps=3&siteid=1564&ref=http%3A%2F%2Fwww.google.com&elqNone&tzo=300&ms=131&optin=disabled
+curl 'http://s1564.t.eloqua.com/visitor/v200/svrGP.aspx?pps=3&siteid=1564&ref=http%3A%2F%2Fwww.google.com&elqNone&tzo=300&ms=131&optin=disabled&elqCookie=1' -H 'Cookie: ELOQUA=GUID=3D37FD59FD0D4EA687469089CB52605A; ELQSTATUS=OK'
+ab -n10 -c4 -H'Cookie: ELOQUA=GUID=3D37FD59FD0D4EA687469089CB52605A; ELQSTATUS=OK' 'http://s1564.t.eloqua.com/visitor/v200/svrGP.aspx?pps=3&siteid=1564&ref=http%3A%2F%2Fwww.google.com&elqNone&tzo=300&ms=131&optin=disabled&elqCookie=1'
+
