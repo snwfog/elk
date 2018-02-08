@@ -79,7 +79,7 @@
         self.postMessage({ worker_id: workerId, processed: cnt, total: clicksCount });
         cnt += 1;
         var req = new XMLHttpRequest();
-        req.open('GET', 'http://' + ipAddress + ':/collect?guid=' + Math.random(), true);
+        req.open('GET', 'http://' + ipAddress + '/collect?guid=' + Math.random(), true);
         req.send();
         setTimeout(sendClicks, 200);
       }
