@@ -24,13 +24,22 @@ Bonus: Websocket client + nice graph for peak usage.
 jruby --server -J-Xms1500m -J-Xmx1500m elk.rb
 RACK_ENV=production bundle exec puma -t 8:8
 
-set JAVA_OPTS='-Xms4g -Xmx4g'
+JAVA_OPTS='-Xms4g -Xmx4g'
 wrk -c10000 -t4 -d30s http://localhost:9292/collect
 
-ab -n5000 -c8 http://localhost:9292/collect &
-ab -n5000 -c8 http://localhost:9293/collect &
-ab -n5000 -c8 http://localhost:9294/collect &
-ab -n5000 -c8 http://localhost:9295/collect &
 
 bundle exec thin -C script/thin_elk.yml start
 bundle exec thin -C script/thin_ws.yml start
+
+curl --include \
+     --no-buffer \
+     --header "Connection: Upgrade" \
+     --header "Upgrade: websocket" \
+     --header "Host: example.com:80" \
+     --header "Origin: http://example.com:80" \
+     --header "Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==" \
+     --header "Sec-WebSocket-Version: 13" \
+     http://example.com:80/
+
+ab -n10000 -c16 http://35.199.18.131/collect
+bundle exec thin start -R script/websocket.ru -p 9999
