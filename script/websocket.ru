@@ -44,7 +44,8 @@ class VisitorLiveStreamApp
       
       ws.on :open do |event|
         target      = event.target
-        client_name = "#{env['REMOTE_ADDR']} [#{SecureRandom.hex(4)}]"
+        ip          = env['HTTP_X_FORWARDED_FOR'] || env['HTTP_X_REAL_IP'] || env['REMOTE_ADDR']
+        client_name = "#{ip} [#{SecureRandom.hex(4)}]"
         
         @clients << { ws:   target,
                       name: client_name }
