@@ -217,10 +217,15 @@
       var serverMsg = JSON.parse(evt.data);
       switch (serverMsg.type) {
         case CHANNEL_UPDATE:
+         console.log(serverMsg.time);
           var newVisitor = [ serverMsg.time * 1000, serverMsg.visitor_count ];
           var newPageView = [ serverMsg.time * 1000, serverMsg.page_view_count ];
           chart.series[ 0 ].addPoint(newVisitor, true, false);
           chart.series[ 1 ].addPoint(newPageView, true, false);
+         
+        chart.xAxis[0].update({
+            min: Math.floor((Date.now()) - 60000)
+        })    
           break;
         case CHANNEL_JOIN:
         case CHANNEL_CLOSE:
@@ -261,7 +266,8 @@
       "lineColor": "#A2A39C",
       "minorGridLineColor": "#A2A39C",
       "tickColor": "#A2A39C",
-      "tickWidth": 1
+      "tickWidth": 1,
+      "tickInterval": 24 * 365 * 1000
     },
     "yAxis": {
       "gridLineDashStyle": "Dot",
