@@ -7,7 +7,7 @@ module Elk
 
     def page_view(env, request, params)
       timestamp = Time.now.utc
-      et_id = params[:guid]
+      et_id     = params[:guid]
 
       t1_exec do |t1|
         t1.pipelined do
