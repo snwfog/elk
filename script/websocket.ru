@@ -11,20 +11,20 @@ class VisitorLiveStreamApp
   CHANNEL_JOIN   = 1
   CHANNEL_HITIT  = 2
   CHANNEL_CLOSE  = 3
-  
+
   def initialize
     @pool    = ConnectionPool.new(size: 100) { Redis.new }
     @clients = []
   end
-  
+
   def call(env)
     if Faye::WebSocket.websocket?(env)
       ws = Faye::WebSocket.new(env)
-      
+
       ws.on :message do |event|
         # p [:message, event.data]
         request = JSON.parse(event.data)
-        
+
         case request['type']
         when CHANNEL_HITIT
           core   = request['core']
@@ -34,27 +34,27 @@ class VisitorLiveStreamApp
           hitit_broadcast("#{client.name} is hitting it with #{core} x #{hits} clicks!", from: target)
         when CHANNEL_UPDATE
           @pool.with do |conn|
-            visitors = conn.keys("visitor:rollup:*:#{request['time']}")
-            page_views = conn.keys("page_view:*:#{request['time']}")
-            ws.send(JSON.dump(type:  CHANNEL_UPDATE,
-                              time:  request['time'],
-                              visitor_count: visitors.count,
-                              page_view_count: page_views.count))
+            page_views      = conn.llen("visitor:rollup:#{request['time']}")
+            unique_visitors = conn.llen("visitor:unique:#{request['time']}")
+            ws.send(JSON.dump(type:            CHANNEL_UPDATE,
+                              time:            request['time'],
+                              visitor_count:   unique_visitors,
+                              page_view_count: page_views))
           end
         end
       end
-      
+
       ws.on :open do |event|
         target      = event.target
         ip          = env['HTTP_X_FORWARDED_FOR'] || env['HTTP_X_REAL_IP'] || env['REMOTE_ADDR']
         client_name = "#{ip} [#{SecureRandom.hex(4)}]"
-        
+
         @clients << { ws:   target,
                       name: client_name }
-        
+
         join_broadcast("#{client_name} has joined the party.")
       end
-      
+
       ws.on :close do |event|
         # p [:close, event.code, event.reason]
         target         = event.target
@@ -65,7 +65,7 @@ class VisitorLiveStreamApp
             leave_broadcast("#{ws[:name]} has left the party.", from: target)
           end
         end
-        
+
         delete_clients.each { |index| @clients.delete_at(index) }
       end
       # Return async Rack response
@@ -75,20 +75,20 @@ class VisitorLiveStreamApp
       #   [200, { 'Content-Type' => 'text/plain' }, ['Hello']]
     end
   end
-  
+
   private
   def join_broadcast(msg)
     broadcast(msg, CHANNEL_JOIN, from: nil)
   end
-  
+
   def hitit_broadcast(msg, from:)
     broadcast(msg, CHANNEL_HITIT, from: from)
   end
-  
+
   def leave_broadcast(msg, from:)
     broadcast(msg, CHANNEL_CLOSE, from: from)
   end
-  
+
   def broadcast(msg, event_type, from:)
     @clients.each do |client|
       unless from == client[:ws]

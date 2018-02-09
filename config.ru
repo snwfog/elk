@@ -20,6 +20,7 @@ client.close
 # ElkApp
 class ElkApp < Sinatra::Base
   VISITOR_ROLL_UP_KEY = 'visitor:rollup'.freeze
+  VISITOR_UNIQUE_KEY  = 'visitor:unique'.freeze
 
   enable :inline_templates
   enable :static
@@ -70,10 +71,9 @@ class ElkApp < Sinatra::Base
     @butlers = Elk::Butler.pool(as:   :butlers,
                                 size: @core_size,
                                 args: _connection_pools(@core_size))
-
-    @collectors = Elk::Collector.pool(as:   :collectors,
-                                      size: @core_size,
-                                      args: _connection_pools(@core_size * 25))
+      # @collectors = Elk::Collector.pool(as:   :collectors,
+      #                                   size: @core_size,
+      #                                   args: _connection_pools(@core_size * 25))
   end
 
   def _connection_pools(size)
@@ -85,11 +85,11 @@ class ElkApp < Sinatra::Base
 
   def _rollup_visits
     et_id = params[:guid]
-
+    time  = Time.now.utc.to_i
     @redis.with do |conn|
-      existing = conn.keys("#{VISITOR_ROLL_UP_KEY}:#{et_id}:*")
-      if existing.empty?
-        conn.sadd("#{VISITOR_ROLL_UP_KEY}:#{et_id}:#{Time.now.utc.to_i}", SecureRandom.hex(10))
+      conn.lpush("#{VISITOR_ROLL_UP_KEY}:#{time}", et_id)
+      if conn.sadd(VISITOR_UNIQUE_KEY, et_id)
+        conn.lpush("#{VISITOR_UNIQUE_KEY}:#{time}", et_id)
       end
     end
   end

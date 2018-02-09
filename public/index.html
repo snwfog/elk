@@ -152,7 +152,7 @@
     $elProgressBars.empty();
     workers.forEach(function (worker) {
       worker.worker.terminate();
-    })
+    });
     workers = [];
   });
 
@@ -327,12 +327,13 @@
 
     series: [
       {
-        name: 'Unique Visitors Count',
+        name: 'Total Hits (Clicks)',
         animation: false,
         data: [],
       },
+
       {
-        name: 'Current Clicks',
+        name: 'Unique Visitors Count',
         animation: false,
         data: [],
       },
