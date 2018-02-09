@@ -11,7 +11,7 @@
  * ref: https://developers.google.com/analytics/devguides/collection/protocol/v1/reference#encoding
  */
 (function (window, document) {
-  var domain = 'http://localhost:9292/collect';
+  var domain = 'http://' + window.location.hostname + '/collect';
 
   var Strings = {};
   Strings.orEmpty = function (entity) {
@@ -24,9 +24,9 @@
     _hooks: [],
 
     register: function (name, f) {
-      if (typeof(this._hooks[ name ]) == 'undefined')
+      if (typeof(this._hooks[ name ]) == 'undefined') {
         this._hooks[ name ] = [];
-
+      }
       this._hooks[ name ].push(f);
     },
 
@@ -43,12 +43,9 @@
 
   Elk.prototype = {
     hooks: new Hooks(),
-    siteID: null,
+    eTagTracking: 0,
 
     pageview: function (ref) {
-      if (!this.siteID)
-        return;
-
       var trackId = this.readTrackId();
 
       if (!trackId) {
@@ -64,11 +61,11 @@
 
     // Allow different way of storing cookies
     readTrackId: function () {
-      var data = { trackId: null };
+      var data = { trackId: "adasdas" };
 
       this.hooks.call('readTrackId', data);
 
-      return data.trackId || readCookie('GUID');
+      return data.trackId ? data.trackId : readCookie('GUID');
     },
 
     // Allow different way of setting cookies
@@ -98,11 +95,7 @@
     trackPageView: function (data) {
       var img = new Image(1, 1);
 
-      var imgSrc = domain + '?pps=3&siteid=' + this.siteID +
-        '&guid=' + data[ 'guid' ] +
-        '&ref=' + data[ 'ref' ] +
-        '&ref2=' + data[ 'ref2' ] +
-        '&tzo=' + data[ 'tzo' ]
+      var imgSrc = domain + '?guid=' + data[ 'guid' ];
 
       img.onload = function () {
         hooks.call('postTrack', data);
@@ -155,29 +148,21 @@
 
     this.push = function () {
       try {
-        var args = arguments[ 1 ] || [];
-        switch (arguments[ 0 ]) {
-          case 'elkSetSiteID' :
-            _elk.siteID = args[ 0 ];
-            break;
+        var args = arguments[ 0 ];
+        switch (args[ 0 ]) {
           case 'elkTrackPageView':
-            _elk.pageview.apply(_elk, args);
+            _elk.pageview.apply(_elk, args.slice(1));
+            break;
+          case 'elkRegister':
+            _elk.hooks.register.apply(_elk.hooks, args.slice(1));
             break;
         }
       } catch (e) {}
     };
-
-    this.register = function (name, f) {
-      _elk.hooks.register(name, f)
-    }
   };
 
   var _oldElkQ = window._elkQ;
-  var _windowElkQ = window._elkQ;
   window._elkQ = new elkQueue();
 
   window._elkQ.push.apply(window._elkQ, _oldElkQ);
 })(window, document);
-
-_elkQ.push('elkSetSiteID', [ 123 ]);
-_elkQ.push('elkTrackPageView');
