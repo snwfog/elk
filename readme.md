@@ -27,7 +27,7 @@ RACK_ENV=production bundle exec puma -t 8:8
 JAVA_OPTS='-Xms4g -Xmx4g'
 wrk -c10000 -t4 -d30s http://localhost:9292/collect
 
-
+ps aux | grep thin | cut -f3 -d' ' | xargs -I{} kill -9 {}
 bundle exec thin -C script/thin_elk.yml start
 bundle exec thin start -R script/websocket.ru -p 9282 --daemon
 # bundle exec thin -C script/thin_ws.yml start
@@ -53,8 +53,6 @@ curl --include \
      http://35.186.168.165/ws
 
 ab -n10000 -c16 http://35.199.18.131/collect
-
-ps aux | grep thin | cut -f3 -d' ' | xargs -I{} kill -9 {}
 
 http://s1564.t.eloqua.com/visitor/v200/svrGP.aspx?pps=3&siteid=1564&ref=http%3A%2F%2Fwww.google.com&elqNone&tzo=300&ms=131&optin=disabled
 curl 'http://s1564.t.eloqua.com/visitor/v200/svrGP.aspx?pps=3&siteid=1564&ref=http%3A%2F%2Fwww.google.com&elqNone&tzo=300&ms=131&optin=disabled&elqCookie=1' -H 'Cookie: ELOQUA=GUID=3D37FD59FD0D4EA687469089CB52605A; ELQSTATUS=OK'
