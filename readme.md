@@ -27,7 +27,7 @@ RACK_ENV=production bundle exec puma -t 8:8
 JAVA_OPTS='-Xms4g -Xmx4g'
 wrk -c10000 -t4 -d30s http://localhost:9292/collect
 
-ps aux | grep thin | cut -f3 -d' ' | xargs -I{} kill -9 {}
+sudo ps aux | grep thin | cut -f3 -d' ' | xargs -I{} kill -9 {}
 bundle exec thin -C script/thin_elk.yml start
 bundle exec thin start -R script/websocket.ru -p 9282 --daemon
 # bundle exec thin -C script/thin_ws.yml start

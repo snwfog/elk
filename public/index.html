@@ -75,15 +75,14 @@
               style="display: none">Cancel
       </button>
       <div style='text-align: center:'>
-        <button id="trackCurrentPage" class="btn btn-primary btn-md" style='margin-top: 10px'>Track Current Page
-        </button>
+        <button id="trackCurrentPage" class="btn btn-primary btn-md" style='margin-top: 10px'>Track Current Page</button>
         Current GUID: <span id='currentGUID' style='text-align: center:'></span>
       </div>
       <div style='margin-top: 10px'>
 
 
         Use GUID:
-        <input id="useGUID" type='text'></input>
+        <input id="useGUID" type='text'>
       </div>
     </div>
   </div>
@@ -269,10 +268,11 @@
 
 <script type="text/javascript" charset="utf-8">
   Highcharts.theme = {
-    "colors": [ "#F92672", "#66D9EF", "#A6E22E", "#A6E22E" ],
+    "colors": ["#66D9EF", "#F92672", "#A6E22E", "#A6E22E" ],
+
     "chart": {
       "backgroundColor": "#272822",
-      "style": { "fontFamily": "Inconsolata", "color": "#A2A39C" }
+      "style": { "fontFamily": "Arial", "color": "#A2A39C" }
     },
     "title": {
       "style": { "color": "#A2A39C" },
@@ -327,13 +327,13 @@
 
     series: [
       {
-        name: 'Total Hits (Clicks)',
+        name: 'Unique Visitors Count',
         animation: false,
         data: [],
       },
 
       {
-        name: 'Unique Visitors Count',
+        name: 'Total Hits (Clicks)',
         animation: false,
         data: [],
       },
