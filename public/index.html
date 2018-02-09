@@ -1,95 +1,96 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Visitor</title>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Visitor</title>
 
-    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <script src="elk.js"></script>
-    
-    <script type="text/javascript">
-        var _elkQ = _elkQ || [];
-       
-        _elkQ.push(['elkTrackPageView']);
-       
-        _elkQ.push(['elkRegister', 'preTrack', function(data) {
-            $('#currentGUID').text(data.guid);
-        }]);        
-        
-        _elkQ.push(['elkRegister', 'readTrackId', function(data) {
-            var guid = $('#useGUID').val();
-            data.trackId = guid;
-        }]);
-    </script>
-    <link rel="stylesheet"
-          href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
-          crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="elk.js"></script>
+
+  <script type="text/javascript">
+    var _elkQ = _elkQ || [];
+
+    _elkQ.push([ 'elkTrackPageView' ]);
+
+    _elkQ.push([ 'elkRegister', 'preTrack', function (data) {
+      $('#currentGUID').text(data.guid);
+    } ]);
+
+    _elkQ.push([ 'elkRegister', 'readTrackId', function (data) {
+      var guid = $('#useGUID').val();
+      data.trackId = guid;
+    } ]);
+  </script>
+  <link rel="stylesheet"
+        href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+        crossorigin="anonymous">
 </head>
 <body>
 
 <nav class="navbar">
-    <section class="navbar-brand">Current Visitors</section>
-    <form class="form-inline">
-        <input id="ip_address" class="form-control mr-sm-2" type="search">
-    </form>
+  <section class="navbar-brand">Current Visitors</section>
+  <form class="form-inline">
+    <input id="ip_address" class="form-control mr-sm-2" type="search">
+  </form>
 </nav>
 
 <div id="container" style="height: 400px;"></div>
 <div class="container">
-    <div class="row mt-5">
-        <div class="col-6">
-            <h2>Console</h2>
-            <div id="console"></div>
-        </div>
-        <div class="col-6">
-            <h2>Configuration</h2>
-            <form>
-                <div class="form-group">
-                    <h4>Web Worker Count: <span
-                            id="webworker_range_display">4</span></h4>
-                    <input id="webworker_range" class="range form-control"
-                           type="range"
-                           min="1" max="20" value="4">
-                    <small id="hardware-warning" class="form-text text-danger"
-                           style="display: none;">
-                        Core limit exceeded, browser might crash :(
-                    </small>
-                </div>
-
-                <div class="form-group">
-                    <h4>Clicks Per Worker: <span
-                            id="webworker_clicks_display">5</span></h4>
-                    <input id="webworker_clicks" class="range form-control"
-                           type="range"
-                           min="1" max="10000" value="5">
-                </div>
-            </form>
-
-            <button id="track" class="btn btn-primary btn-md">Hit It!</button>
-            <button id="stop_track" class="btn btn-danger btn-md"
-                    style="display: none">Cancel
-            </button>
-            <div style='text-align: center:'>
-                <button id="trackCurrentPage" class="btn btn-primary btn-md" style='margin-top: 10px'>Track Current Page</button>
-                 Current GUID: <span id='currentGUID' style='text-align: center:'></span>
-            </div>
-            <div style='margin-top: 10px'>
-               
-
-                Use GUID:
-                <input id="useGUID" type='text'></input>
-            </div>
-        </div>
+  <div class="row mt-5">
+    <div class="col-6">
+      <h2>Console</h2>
+      <div id="console"></div>
     </div>
-    <div class="row mt-2">
-        <div class="col-6"></div>
-        <div class="col-6" id="progress_bars"></div>
+    <div class="col-6">
+      <h2>Configuration</h2>
+      <form>
+        <div class="form-group">
+          <h4>Web Worker Count: <span
+              id="webworker_range_display">4</span></h4>
+          <input id="webworker_range" class="range form-control"
+                 type="range"
+                 min="1" max="20" value="4">
+          <small id="hardware-warning" class="form-text text-danger"
+                 style="display: none;">
+            Core limit exceeded, browser might crash :(
+          </small>
+        </div>
+
+        <div class="form-group">
+          <h4>Clicks Per Worker: <span
+              id="webworker_clicks_display">5</span></h4>
+          <input id="webworker_clicks" class="range form-control"
+                 type="range"
+                 min="1" max="10000" value="5">
+        </div>
+      </form>
+
+      <button id="track" class="btn btn-primary btn-md">Hit It!</button>
+      <button id="stop_track" class="btn btn-danger btn-md"
+              style="display: none">Cancel
+      </button>
+      <div style='text-align: center:'>
+        <button id="trackCurrentPage" class="btn btn-primary btn-md" style='margin-top: 10px'>Track Current Page
+        </button>
+        Current GUID: <span id='currentGUID' style='text-align: center:'></span>
+      </div>
+      <div style='margin-top: 10px'>
+
+
+        Use GUID:
+        <input id="useGUID" type='text'></input>
+      </div>
     </div>
+  </div>
+  <div class="row mt-2">
+    <div class="col-6"></div>
+    <div class="col-6" id="progress_bars"></div>
+  </div>
 </div>
 
 <!--<script id="tracking_command_worker" type="javascript">-->
@@ -113,7 +114,6 @@
 
     setTimeout(sendClicks, 200);
   };
-
 </script>
 
 <script type="text/javascript" charset="utf-8">
@@ -203,11 +203,11 @@
       });
     }
   });
-  
-  $("#trackCurrentPage").on("click", function() {
-    _elkQ.push(["elkTrackPageView"]);
+
+  $("#trackCurrentPage").on("click", function () {
+    _elkQ.push([ "elkTrackPageView" ]);
   });
-  
+
   $(document).ready(function () {
     var serverAddress = window.location.hostname;
     $('#ip_address').val(serverAddress);
@@ -247,15 +247,15 @@
       var serverMsg = JSON.parse(evt.data);
       switch (serverMsg.type) {
         case CHANNEL_UPDATE:
-         console.log(serverMsg.time);
+          // console.log(serverMsg.time);
           var newVisitor = [ serverMsg.time * 1000, serverMsg.visitor_count ];
           var newPageView = [ serverMsg.time * 1000, serverMsg.page_view_count ];
           chart.series[ 0 ].addPoint(newVisitor, true, false);
           chart.series[ 1 ].addPoint(newPageView, true, false);
-         
-        chart.xAxis[0].update({
+
+          chart.xAxis[ 0 ].update({
             min: Math.floor((Date.now()) - 60000)
-        })    
+          });
           break;
         case CHANNEL_JOIN:
         case CHANNEL_CLOSE:
@@ -331,11 +331,11 @@
         animation: false,
         data: [],
       },
-       {
-         name: 'Current Clicks',
-         animation: false,
-         data: [],
-       },
+      {
+        name: 'Current Clicks',
+        animation: false,
+        data: [],
+      },
     ],
 
     plotOptions: {

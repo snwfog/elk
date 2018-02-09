@@ -22,7 +22,7 @@
 
   Hooks.prototype = {
     _hooks: [],
-    
+
     register: function (name, f) {
       if (typeof(this._hooks[ name ]) == 'undefined') {
         this._hooks[ name ] = [];
@@ -47,7 +47,7 @@
 
     pageview: function (ref) {
       var trackId = this.readTrackId();
-        
+
       if (!trackId) {
         trackId = this.generateTrackId();
         this.setTrackId(trackId);
@@ -64,7 +64,7 @@
       var data = { trackId: "adasdas" };
 
       this.hooks.call('readTrackId', data);
-      
+
       return data.trackId ? data.trackId : readCookie('GUID');
     },
 
@@ -96,7 +96,7 @@
       var img = new Image(1, 1);
 
       var imgSrc = domain + '?guid=' + data[ 'guid' ];
-        
+
       img.onload = function () {
         hooks.call('postTrack', data);
       };
@@ -145,7 +145,7 @@
 
   var elkQueue = function () {
     var _elk = new Elk();
-  
+
     this.push = function () {
       try {
         var args = arguments[ 0 ];
