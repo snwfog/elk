@@ -215,7 +215,7 @@
     // Create WebSocket connection.
     var $elIpAddress = $('#ip_address');
 
-    const socket = new WebSocket('ws://' + $elIpAddress.val() + ':9283/ws');
+    const socket = new WebSocket('ws://' + $elIpAddress.val() + '/ws');
     const serverDelay = 5; // 5 seconds lag
 
     const CHANNEL_UPDATE = 0;
